@@ -1,0 +1,4 @@
+/node_modules
+/wwwroot/**/*.js
+package-lock.json 
+yarn.lock 

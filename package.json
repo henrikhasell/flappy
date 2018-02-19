@@ -1,0 +1,14 @@
+{
+  "dependencies": {
+    "@types/matter-js": "^0.10.0",
+    "@types/pixi.js": "^4.7.1",
+    "gulp": "^3.9.1",
+    "gulp-typescript": "^4.0.1",
+    "matter-js": "^0.14.1",
+    "pixi.js": "^4.7.0",
+    "typescript": "^2.7.1"
+  },
+  "scripts": {
+    "postinstall": "node_modules/.bin/gulp"
+  }
+}
