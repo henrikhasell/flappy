@@ -1,16 +1,19 @@
+const enum GameState {
+    InProgress, StartGame, GameOver
+}
+
 interface Configuration {
     force:number;
     speed:number;
-    pipe:{delay:number,gap:number};
+    pipe: { delay:number, gap:number };
 }
+
+var gameState:GameState = GameState.InProgress;
 
 var config:Configuration = {
     force:7,
     speed:3,
-    pipe: {
-        delay:100,
-        gap:100
-    }
+    pipe: { delay:100, gap:100 }
 };
 
 class FlappyPhysics {
@@ -19,50 +22,61 @@ class FlappyPhysics {
     private mouseConstraint:Matter.MouseConstraint;
     private player:Matter.Body;
     private floor:Matter.Body;
+    private sensor:Matter.Body;
     private pipes:Matter.Body[];
     private floorOffsets:number[];
-    private playerAlive:boolean;
     private pipeCounter:number;
+    private gameState:GameState;
 
     constructor() {
         this.engine = Matter.Engine.create();
         this.runner = Matter.Runner.create({delta:1000/60});
         this.mouseConstraint = Matter.MouseConstraint.create(this.engine);
-        this.player = Matter.Bodies.circle(100, 0, 10, {friction:1,restitution:0.9});
+        this.player = Matter.Bodies.circle(50, 0, 10, {friction:1,restitution:0.9});
         this.floor = Matter.Bodies.rectangle(400, 544, 800, 112, {isStatic:true});
+        this.sensor = Matter.Bodies.rectangle(-200, 300, 10, 600, {isSensor:true});
         this.pipes = [];
         this.floorOffsets = [];
         for(let i = 0; i < 5; i++) {
             this.floorOffsets.push(i * 336);
         }
-        this.playerAlive = true;
         this.pipeCounter = 0;
+        this.gameState = GameState.StartGame;
 
-        Matter.World.add(this.engine.world, [this.player, this.floor]);
-        Matter.Events.on(this.engine, 'tick', (event) => {
-            let worldVelocity:Matter.Vector;
-            if(--this.pipeCounter <= 0) {
-                this.pipeCounter = config.pipe.delay;
-                for(let flipped of [true, false]) {
-                    this.createPipe(300, flipped);
-                }
-            }
-            if(this.playerAlive) {
-                this.player.angle = -45 * Math.PI / 180;
-                if(this.player.velocity.y > 0) {
-                    this.player.angle += Math.min(135 * Math.PI / 180, this.player.velocity.y * 0.3);
-                }
-                for(let i in this.floorOffsets) {
-                    this.floorOffsets[i] -= config.speed;
-                    if(this.floorOffsets[i] < -336) {
-                        this.floorOffsets[i] += this.floorOffsets.length * 336;
+        Matter.World.add(this.engine.world, [this.player, this.floor, this.sensor]);
+        Matter.Events.on(this.engine, 'tick', event => {
+            let worldVelocity:Matter.Vector = { x: -config.speed, y: 0 };;
+            switch(this.gameState) {
+                case GameState.InProgress:
+                    if(--this.pipeCounter <= 0) {
+                        this.pipeCounter = config.pipe.delay;
+                        for(let flipped of [true, false]) {
+                            this.createPipe(300, flipped);
+                        }
                     }
+                    this.player.angle = -45 * Math.PI / 180;
+                    if(this.player.velocity.y > 0) {
+                        this.player.angle += Math.min(135 * Math.PI / 180, this.player.velocity.y * 0.3);
+                    }
+                    break;
+                case GameState.StartGame:
+                    Matter.Body.setPosition(this.player, { x: 50, y: 300 });
+                    Matter.Body.setVelocity(this.player, { x: 0, y: 0 });
+                    Matter.Body.setAngle(this.player, 0);
+                    Matter.Body.setAngularVelocity(this.player, 0);
+                    break;
+                case GameState.GameOver:
+                    worldVelocity = { x: 0, y: 0 };
+                    break;
+            }
+
+            for(let index in this.floorOffsets) {
+                this.floorOffsets[index] += worldVelocity.x;
+                if(this.floorOffsets[index] < -336) {
+                    this.floorOffsets[index] += this.floorOffsets.length * 336;
                 }
-                worldVelocity = {x:-config.speed,y:0};
             }
-            else {
-                worldVelocity = {x:0,y:0}
-            }
+
             for(let i of this.pipes) {
                 Matter.Body.setPosition(i, {
                     x:i.position.x+worldVelocity.x,
@@ -70,19 +84,44 @@ class FlappyPhysics {
                 }); // <= Move the pipes forwards.
                 Matter.Body.setVelocity(i, worldVelocity);
             }
-            Matter.Body.setVelocity(this.floor, worldVelocity);
 
+            Matter.Body.setVelocity(this.floor, worldVelocity);
+            Matter.Body.setPosition(this.sensor, {x:-100,y:300});
         });
-        Matter.Events.on(this.mouseConstraint, 'mousedown', (event) => {
-            if(this.playerAlive) {
-                Matter.Body.setVelocity(this.player, {x:0, y:-config.force});
+        Matter.Events.on(this.mouseConstraint, 'mousedown', event => {
+            switch(this.gameState) {
+                case GameState.GameOver:
+                    while(this.pipes.length > 0) {
+                        Matter.World.remove(this.engine.world, this.pipes.pop());
+                    }
+                    this.gameState = GameState.StartGame;
+                    this.pipeCounter = config.pipe.delay; break;
+                case GameState.StartGame:
+                    this.gameState = GameState.InProgress;
+                case GameState.InProgress:
+                    Matter.Body.setVelocity(this.player, {x:0, y:-config.force});
             }
         });
-        Matter.Events.on(this.engine, 'collisionStart', (event) => {
+        Matter.Events.on(this.engine, 'collisionStart', event => {
             for(let pair of event.pairs) {
-                for(let body of [pair.bodyA, pair.bodyB]) {
-                    if(body == this.player) {
-                        this.playerAlive = false;
+                let tuples:Matter.Body[][] = [
+                    [pair.bodyA, pair.bodyB],
+                    [pair.bodyB, pair.bodyA]
+                ];
+                for(let tuple of tuples) {
+                    switch(tuple[0]) {
+                        case this.player:
+                            this.gameState = GameState.GameOver;
+                            break;
+                        case this.sensor:
+                            for(let i = 0; i < this.pipes.length; i++) {
+                                if(this.pipes[i] == tuple[1]) {
+                                    Matter.World.remove(this.engine.world, this.pipes[i])
+                                    this.pipes.splice(i, 1);
+                                    break;
+                                }
+                            }
+                            break;
                     }
                 }
             }
@@ -109,8 +148,8 @@ class FlappyPhysics {
         return this.floorOffsets.slice(0);
     }
 
-    public getPlayerAlive():boolean {
-        return this.playerAlive;
+    public getPlayerAlive():GameState {
+        return this.gameState;
     }
 
     public getPipeOrientations():{x:number,y:number,r:number}[] {
@@ -184,17 +223,22 @@ class FlappyGraphics {
     public display(physics:FlappyPhysics):void {
         let position:{x:number,y:number} = physics.getPlayerPosition();
         let rotation:number = physics.getPlayerRotation();
-        let alive:boolean = physics.getPlayerAlive();
+        let gameState:GameState = physics.getPlayerAlive();
 
         this.animation.position.x = position.x;
         this.animation.position.y = position.y;
         this.animation.rotation = rotation;
 
-        if(alive) {
-            this.animation.play();
-        }
-        else {
-            this.animation.stop();
+        switch(gameState) {
+            case GameState.GameOver:
+                this.animation.stop(); break;
+            case GameState.StartGame:
+                while(this.pipeSprites.length > 0) {
+                    let pipeSprite:PIXI.Sprite = this.pipeSprites.pop();
+                    this.application.stage.removeChild(pipeSprite);
+                    pipeSprite.destroy();
+                }
+                this.animation.play(); break;
         }
 
         let floorOffsets:number[] = physics.getFloorOffsets();
@@ -203,6 +247,7 @@ class FlappyGraphics {
         }
 
         let pipeOrientations:{x:number,y:number,r:number}[] = physics.getPipeOrientations();
+
         for(let i in pipeOrientations) {
             let sprite:PIXI.Sprite = this.pipeSprites[i];
             if(sprite == undefined) {
@@ -216,7 +261,7 @@ class FlappyGraphics {
             sprite.rotation = pipeOrientations[i].r;
         }
 
-        window.requestAnimationFrame((time:number) => {
+        window.requestAnimationFrame(time => {
             this.display(physics);
         });
     }
