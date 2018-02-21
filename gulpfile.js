@@ -12,4 +12,10 @@ gulp.task('copy', function() {
     ]).pipe(gulp.dest('wwwroot'));
 });
 
+gulp.task('watch', function() {
+    gulp.watch('*.ts', function() {
+        gulp.start('compile');
+    });
+});
+
 gulp.task('default', ['copy', 'compile']);
