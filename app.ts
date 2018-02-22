@@ -8,8 +8,6 @@ interface Configuration {
     pipe: { delay:number, gap:number };
 }
 
-var gameState:GameState = GameState.InProgress;
-
 var config:Configuration = {
     force:7,
     speed:3,
@@ -24,8 +22,10 @@ class FlappyPhysics {
     private floor:Matter.Body;
     private sensor:Matter.Body;
     private pipes:Matter.Body[];
+    private pipeSensors:Matter.Body[];
     private floorOffsets:number[];
     private pipeCounter:number;
+    private score:number;
     private gameState:GameState;
 
     constructor() {
@@ -36,23 +36,28 @@ class FlappyPhysics {
         this.floor = Matter.Bodies.rectangle(400, 544, 800, 112, {isStatic:true});
         this.sensor = Matter.Bodies.rectangle(-200, 300, 10, 600, {isSensor:true});
         this.pipes = [];
+        this.pipeSensors = [];
         this.floorOffsets = [];
         for(let i = 0; i < 5; i++) {
             this.floorOffsets.push(i * 336);
         }
         this.pipeCounter = 0;
+        this.score = 0;
         this.gameState = GameState.StartGame;
 
         Matter.World.add(this.engine.world, [this.player, this.floor, this.sensor]);
         Matter.Events.on(this.engine, 'tick', event => {
-            let worldVelocity:Matter.Vector = { x: -config.speed, y: 0 };;
+            let worldVelocity:Matter.Vector = { x: -config.speed, y: 0 };
             switch(this.gameState) {
                 case GameState.InProgress:
                     if(--this.pipeCounter <= 0) {
-                        this.pipeCounter = config.pipe.delay;
                         for(let flipped of [true, false]) {
                             this.createPipe(300, flipped);
                         }
+                        let pipeSensor:Matter.Body = Matter.Bodies.rectangle(900, 300, 5, 600, { isStatic:true, isSensor: true });
+                        Matter.World.add(this.engine.world, pipeSensor);
+                        this.pipeSensors.push(pipeSensor);
+                        this.pipeCounter = config.pipe.delay;
                     }
                     this.player.angle = -45 * Math.PI / 180;
                     if(this.player.velocity.y > 0) {
@@ -81,8 +86,15 @@ class FlappyPhysics {
                 Matter.Body.setPosition(i, {
                     x:i.position.x+worldVelocity.x,
                     y:i.position.y+worldVelocity.y
-                }); // <= Move the pipes forwards.
+                }); // <= Move pipes forward.
                 Matter.Body.setVelocity(i, worldVelocity);
+            }
+
+            for(let i of this.pipeSensors) {
+                Matter.Body.setPosition(i, {
+                    x:i.position.x+worldVelocity.x,
+                    y:300
+                }); // <= Move sensors forward.
             }
 
             Matter.Body.setVelocity(this.floor, worldVelocity);
@@ -94,8 +106,12 @@ class FlappyPhysics {
                     while(this.pipes.length > 0) {
                         Matter.World.remove(this.engine.world, this.pipes.pop());
                     }
+                    while(this.pipeSensors.length > 0) {
+                        Matter.World.remove(this.engine.world, this.pipeSensors.pop());
+                    }
                     this.gameState = GameState.StartGame;
-                    this.pipeCounter = config.pipe.delay; break;
+                    this.pipeCounter = config.pipe.delay;
+                    this.score = 0; break;
                 case GameState.StartGame:
                     this.gameState = GameState.InProgress;
                 case GameState.InProgress:
@@ -111,7 +127,21 @@ class FlappyPhysics {
                 for(let tuple of tuples) {
                     switch(tuple[0]) {
                         case this.player:
-                            this.gameState = GameState.GameOver;
+                            let handled:boolean = false;
+                            if(this.gameState == GameState.InProgress) {
+                                for(let i = 0; i < this.pipeSensors.length; i++) {
+                                    if(this.pipeSensors[i] == tuple[1]) {
+                                        Matter.World.remove(this.engine.world, this.pipeSensors[i])
+                                        this.pipeSensors.splice(i, 1);
+                                        this.score++;
+                                        handled = true;
+                                        break;
+                                    }
+                                }
+                                if(!handled) {
+                                    this.gameState = GameState.GameOver;
+                                }
+                            }
                             break;
                         case this.sensor:
                             for(let i = 0; i < this.pipes.length; i++) {
@@ -130,14 +160,21 @@ class FlappyPhysics {
     }
 
     public createPipe(height:number, flipped:boolean):Matter.Body {
-        let result:Matter.Body = Matter.Bodies.rectangle(900, 300 + (160+config.pipe.gap/2) * (flipped ? -1 : 1), 52, 320, {isStatic:true,angle:flipped ? Math.PI : 0});
+        let result:Matter.Body = Matter.Bodies.rectangle(900, 300 + (160+config.pipe.gap/2) * (flipped ? -1 : 1), 52, 320, {isStatic:true,angle:flipped ? Math.PI : 0});// WTF is this ungliness?
         Matter.World.add(this.engine.world, result);
         this.pipes.push(result);
         return result;
     }
 
     public getPlayerPosition():{x:number,y:number} {
-        return {x:this.player.position.x, y:this.player.position.y}
+        return {
+            x: this.player.position.x,
+            y: this.player.position.y
+        };
+    }
+    
+    public getScore():number {
+        return this.score;
     }
 
     public getPlayerRotation():number {
@@ -155,7 +192,11 @@ class FlappyPhysics {
     public getPipeOrientations():{x:number,y:number,r:number}[] {
         let result:{x:number,y:number,r:number}[] = [];
         for(let pipe of this.pipes) {
-            result.push({x:pipe.position.x,y:pipe.position.y,r:pipe.angle});
+            result.push({
+                x: pipe.position.x,
+                y: pipe.position.y,
+                r: pipe.angle
+            });
         }
         return result;
     }
@@ -164,6 +205,7 @@ class FlappyPhysics {
 class FlappyGraphics {
     private application:PIXI.Application;
     private animation:PIXI.extras.AnimatedSprite;
+    private bitmapText:PIXI.extras.BitmapText;
     private pipeContainer:PIXI.Container;
     private floorContainer:PIXI.Container;
     private background:PIXI.Sprite;
@@ -181,7 +223,8 @@ class FlappyGraphics {
             'images/bluebird-upflap.png',
             'images/floor.png',
             'images/pipe-green.png',
-            'images/background.png'
+            'images/background.png',
+            'fonts/score.xml'
         ])
         .on('progress', (loader, resource) => {
             console.info('Loaded resource ' + resource.name);
@@ -200,6 +243,8 @@ class FlappyGraphics {
             this.animation.loop = true;
             this.animation.animationSpeed = 0.2;
 
+            this.bitmapText = new PIXI.extras.BitmapText("Hello, world!", { font: '36px Score' });
+
             this.floorSprites = [];
             let floorTexture:PIXI.Texture = PIXI.loader.resources['images/floor.png'].texture;
             for(let i:number = 0; i < 5; i ++) {
@@ -214,6 +259,7 @@ class FlappyGraphics {
             this.application.stage.addChild(this.pipeContainer);
             this.application.stage.addChild(this.floorContainer);
             this.application.stage.addChild(this.animation);
+            this.application.stage.addChild(this.bitmapText);
             document.body.appendChild(this.application.view);
             this.display(physics);
         })
@@ -247,7 +293,6 @@ class FlappyGraphics {
         }
 
         let pipeOrientations:{x:number,y:number,r:number}[] = physics.getPipeOrientations();
-
         for(let i in pipeOrientations) {
             let sprite:PIXI.Sprite = this.pipeSprites[i];
             if(sprite == undefined) {
@@ -260,6 +305,10 @@ class FlappyGraphics {
             sprite.position.y = pipeOrientations[i].y;
             sprite.rotation = pipeOrientations[i].r;
         }
+
+        this.bitmapText.text = "" + physics.getScore();
+        this.bitmapText.position.x = 144 - this.bitmapText.width / 2;
+        this.bitmapText.position.y = 50;
 
         window.requestAnimationFrame(time => {
             this.display(physics);

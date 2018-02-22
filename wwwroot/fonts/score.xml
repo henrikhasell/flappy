@@ -1,0 +1,19 @@
+<font>
+    <info face="Score" size="36"/>
+    <common lineHeight="36" base="36" scaleW="96" scaleH="108" pages="1" packed="0"/>
+    <pages>
+        <page id="0" file="score.png"/>
+    </pages>
+    <chars count="95">
+        <char id="48" x="0" y="0" width="24" height="36" xoffset="0" yoffset="0" xadvance="26" page="0" chnl="0" letter="0"/>
+        <char id="49" x="24" y="0" width="16" height="36" xoffset="0" yoffset="0" xadvance="18" page="0" chnl="0" letter="1"/>
+        <char id="50" x="40" y="0" width="24" height="36" xoffset="0" yoffset="0" xadvance="26" page="0" chnl="0" letter="2"/>
+        <char id="51" x="64" y="0" width="24" height="36" xoffset="0" yoffset="0" xadvance="26" page="0" chnl="0" letter="3"/>
+        <char id="52" x="0" y="36" width="24" height="36" xoffset="0" yoffset="0" xadvance="26" page="0" chnl="0" letter="4"/>
+        <char id="53" x="24" y="36" width="24" height="36" xoffset="0" yoffset="0" xadvance="26" page="0" chnl="0" letter="5"/>
+        <char id="54" x="48" y="36" width="24" height="36" xoffset="0" yoffset="0" xadvance="26" page="0" chnl="0" letter="6"/>
+        <char id="55" x="72" y="36" width="24" height="36" xoffset="0" yoffset="0" xadvance="26" page="0" chnl="0" letter="7"/>
+        <char id="56" x="0" y="72" width="24" height="36" xoffset="0" yoffset="0" xadvance="26" page="0" chnl="0" letter="8"/>
+        <char id="57" x="24" y="72" width="24" height="36" xoffset="0" yoffset="0" xadvance="26" page="0" chnl="0" letter="9"/>
+    </chars>
+</font>
