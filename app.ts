@@ -8,10 +8,22 @@ interface Configuration {
     pipe: { delay:number, gap:number };
 }
 
+interface Sounds {
+    point:Howl;
+    hit:Howl;
+    wing:Howl;
+}
+
 var config:Configuration = {
-    force:7,
+    force:6,
     speed:3,
     pipe: { delay:100, gap:100 }
+};
+
+var sounds:Sounds = {
+    point: new Howl({ src:'audio/point.ogg' }),
+    hit: new Howl({ src:'audio/hit.ogg' }),
+    wing: new Howl({ src:'audio/wing.ogg' }),
 };
 
 class FlappyPhysics {
@@ -69,7 +81,6 @@ class FlappyPhysics {
                     Matter.Body.setVelocity(this.player, { x: 0, y: 0 });
                     Matter.Body.setAngle(this.player, 0);
                     Matter.Body.setAngularVelocity(this.player, 0);
-                    break;
                 case GameState.GameOver:
                     worldVelocity = { x: 0, y: 0 };
                     break;
@@ -116,6 +127,7 @@ class FlappyPhysics {
                     this.gameState = GameState.InProgress;
                 case GameState.InProgress:
                     Matter.Body.setVelocity(this.player, {x:0, y:-config.force});
+                    sounds.wing.play();
             }
         });
         Matter.Events.on(this.engine, 'collisionStart', event => {
@@ -127,12 +139,13 @@ class FlappyPhysics {
                 for(let tuple of tuples) {
                     switch(tuple[0]) {
                         case this.player:
-                            let handled:boolean = false;
                             if(this.gameState == GameState.InProgress) {
+                                let handled:boolean = false;
                                 for(let i = 0; i < this.pipeSensors.length; i++) {
                                     if(this.pipeSensors[i] == tuple[1]) {
                                         Matter.World.remove(this.engine.world, this.pipeSensors[i])
                                         this.pipeSensors.splice(i, 1);
+                                        sounds.point.play();
                                         this.score++;
                                         handled = true;
                                         break;
@@ -140,6 +153,7 @@ class FlappyPhysics {
                                 }
                                 if(!handled) {
                                     this.gameState = GameState.GameOver;
+                                    sounds.hit.play();
                                 }
                             }
                             break;
@@ -241,7 +255,7 @@ class FlappyGraphics {
             this.animation.anchor.x = 0.5;
             this.animation.anchor.y = 0.5;
             this.animation.loop = true;
-            this.animation.animationSpeed = 0.2;
+            this.animation.animationSpeed = 0.15;
 
             this.bitmapText = new PIXI.extras.BitmapText("Hello, world!", { font: '36px Score' });
 
