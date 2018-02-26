@@ -21,9 +21,15 @@ var config:Configuration = {
 };
 
 var sounds:Sounds = {
-    point: new Howl({ src:'audio/point.ogg' }),
-    hit: new Howl({ src:'audio/hit.ogg' }),
-    wing: new Howl({ src:'audio/wing.ogg' }),
+    point: new Howl({
+        src:'audio/point.ogg'
+    }),
+    hit: new Howl({
+        src:'audio/hit.ogg'
+    }),
+    wing: new Howl({
+        src:'audio/wing.ogg'
+    })
 };
 
 class FlappyPhysics {
@@ -111,25 +117,12 @@ class FlappyPhysics {
             Matter.Body.setVelocity(this.floor, worldVelocity);
             Matter.Body.setPosition(this.sensor, {x:-100,y:300});
         });
-        Matter.Events.on(this.mouseConstraint, 'mousedown', event => {
-            switch(this.gameState) {
-                case GameState.GameOver:
-                    while(this.pipes.length > 0) {
-                        Matter.World.remove(this.engine.world, this.pipes.pop());
-                    }
-                    while(this.pipeSensors.length > 0) {
-                        Matter.World.remove(this.engine.world, this.pipeSensors.pop());
-                    }
-                    this.gameState = GameState.StartGame;
-                    this.pipeCounter = config.pipe.delay;
-                    this.score = 0; break;
-                case GameState.StartGame:
-                    this.gameState = GameState.InProgress;
-                case GameState.InProgress:
-                    Matter.Body.setVelocity(this.player, {x:0, y:-config.force});
-                    sounds.wing.play();
+        Matter.Events.on(this.mouseConstraint, 'mousedown', () => this.flap());
+        window.onkeydown = event => {
+            if(event.key == ' ' && !event.repeat) {
+                this.flap();
             }
-        });
+        };
         Matter.Events.on(this.engine, 'collisionStart', event => {
             for(let pair of event.pairs) {
                 let tuples:Matter.Body[][] = [
@@ -214,10 +207,32 @@ class FlappyPhysics {
         }
         return result;
     }
+
+    public flap():void {
+        switch(this.gameState) {
+            case GameState.GameOver:
+                while(this.pipes.length > 0) {
+                    Matter.World.remove(this.engine.world, this.pipes.pop());
+                }
+                while(this.pipeSensors.length > 0) {
+                    Matter.World.remove(this.engine.world, this.pipeSensors.pop());
+                }
+                this.gameState = GameState.StartGame;
+                this.pipeCounter = config.pipe.delay;
+                this.score = 0; break;
+            case GameState.StartGame:
+                this.gameState = GameState.InProgress;
+            case GameState.InProgress:
+                Matter.Body.setVelocity(this.player, {x:0, y:-config.force});
+                sounds.wing.play();
+        }
+    }
 }
 
 class FlappyGraphics {
+
     private application:PIXI.Application;
+    private mask:PIXI.Graphics;
     private animation:PIXI.extras.AnimatedSprite;
     private bitmapText:PIXI.extras.BitmapText;
     private pipeContainer:PIXI.Container;
@@ -225,8 +240,12 @@ class FlappyGraphics {
     private background:PIXI.Sprite;
     private pipeSprites:PIXI.Sprite[];
     private floorSprites:PIXI.Sprite[];
+    private scoreSprite:PIXI.Sprite;
+    private scoreSpriteScore:PIXI.extras.BitmapText;
+    private scoreSpriteHighScore:PIXI.extras.BitmapText;
     
     constructor(physics:FlappyPhysics) {
+        PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
         this.application = new PIXI.Application();
         this.pipeContainer = new PIXI.Container();
         this.floorContainer = new PIXI.Container();
@@ -238,12 +257,22 @@ class FlappyGraphics {
             'images/floor.png',
             'images/pipe-green.png',
             'images/background.png',
+            'images/score.png',
             'fonts/score.xml'
         ])
         .on('progress', (loader, resource) => {
             console.info('Loaded resource ' + resource.name);
         })
         .on('complete', (loader, resource) => {
+            window.onresize = () => {
+                let ratio:number = 600 / window.innerHeight;
+                let scaledWidth:number = window.innerWidth * ratio;
+                this.application.stage.x = scaledWidth / 2 - 144;
+                this.application.renderer.resize(
+                    scaledWidth, 600
+                );
+            };
+            window.onresize(null);
 
             this.animation = new PIXI.extras.AnimatedSprite([
                 PIXI.loader.resources['images/bluebird-downflap.png'].texture,
@@ -251,13 +280,36 @@ class FlappyGraphics {
                 PIXI.loader.resources['images/bluebird-upflap.png'].texture,
                 PIXI.loader.resources['images/bluebird-midflap.png'].texture
             ]);
-            
+
+            this.scoreSprite = new PIXI.Sprite(PIXI.loader.resources['images/score.png'].texture);
+            this.scoreSprite.scale.x = 3;
+            this.scoreSprite.scale.y = 3;
+            this.scoreSprite.anchor.x = 0.5;
+            this.scoreSprite.anchor.y = 0.5;
+            this.scoreSprite.position.x = 144;
+            this.scoreSprite.position.y = 300;
+            this.scoreSpriteScore = new PIXI.extras.BitmapText("0", { font: '12px Score' });
+            this.scoreSpriteScore.anchor.x = 0.5;
+            this.scoreSpriteScore.anchor.y = 0.5;
+            this.scoreSpriteScore.position.y = -7;
+            this.scoreSpriteHighScore = new PIXI.extras.BitmapText("0", { font: '12px Score' });
+            this.scoreSpriteHighScore.anchor.x = 0.5;
+            this.scoreSpriteHighScore.anchor.y = 0.5;
+            this.scoreSpriteHighScore.position.y = 14;
+            this.scoreSprite.addChild(this.scoreSpriteScore);
+            this.scoreSprite.addChild(this.scoreSpriteHighScore);
+
+            this.mask = new PIXI.Graphics();
+            this.mask.beginFill(0xffffff, 1);
+            this.mask.drawRect(0, 0, 288, 600);
+            this.application.stage.mask = this.mask;
+
             this.animation.anchor.x = 0.5;
             this.animation.anchor.y = 0.5;
             this.animation.loop = true;
             this.animation.animationSpeed = 0.15;
 
-            this.bitmapText = new PIXI.extras.BitmapText("Hello, world!", { font: '36px Score' });
+            this.bitmapText = new PIXI.extras.BitmapText("0", { font: '36px Score' });
 
             this.floorSprites = [];
             let floorTexture:PIXI.Texture = PIXI.loader.resources['images/floor.png'].texture;
@@ -274,6 +326,8 @@ class FlappyGraphics {
             this.application.stage.addChild(this.floorContainer);
             this.application.stage.addChild(this.animation);
             this.application.stage.addChild(this.bitmapText);
+            this.application.stage.addChild(this.scoreSprite);
+            this.application.stage.addChild(this.mask);
             document.body.appendChild(this.application.view);
             this.display(physics);
         })
