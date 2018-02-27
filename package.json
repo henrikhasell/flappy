@@ -1,14 +1,16 @@
 {
   "dependencies": {
-    "@types/howler": "^2.0.5",
-    "@types/matter-js": "^0.10.0",
-    "@types/pixi.js": "^4.7.1",
-    "gulp": "^3.9.1",
-    "gulp-typescript": "^4.0.1",
     "howler": "^2.0.9",
     "matter-js": "^0.14.1",
-    "pixi.js": "^4.7.0",
-    "typescript": "^2.7.1"
+    "pixi.js": "^4.7.0"
+  },
+  "devDependencies": {
+    "@types/howler": "latest",
+    "@types/matter-js": "latest",
+    "@types/pixi.js": "latest",
+    "gulp": "latest",
+    "gulp-typescript": "latest",
+    "typescript": "latest"
   },
   "scripts": {
     "postinstall": "node_modules/.bin/gulp"
