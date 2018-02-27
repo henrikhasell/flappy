@@ -32,6 +32,18 @@ var sounds:Sounds = {
     })
 };
 
+const enum FlappyEvent {
+    StartGame, Die
+}
+
+interface FlappyListener {
+    onReset:() => void;
+    onDie:(score:number, highScore:number) => void;
+    onScore:(score:number) => void;
+}
+
+var listeners:FlappyListener[] = [];
+
 class FlappyPhysics {
     private engine:Matter.Engine;
     private runner:Matter.Runner;
@@ -44,6 +56,7 @@ class FlappyPhysics {
     private floorOffsets:number[];
     private pipeCounter:number;
     private score:number;
+    private highScore:number;
     private gameState:GameState;
 
     constructor() {
@@ -61,6 +74,7 @@ class FlappyPhysics {
         }
         this.pipeCounter = 0;
         this.score = 0;
+        this.highScore = 0;
         this.gameState = GameState.StartGame;
 
         Matter.World.add(this.engine.world, [this.player, this.floor, this.sensor]);
@@ -140,12 +154,21 @@ class FlappyPhysics {
                                         this.pipeSensors.splice(i, 1);
                                         sounds.point.play();
                                         this.score++;
+                                        if(this.score >= this.highScore) {
+                                            this.highScore = this.score;
+                                        }
+                                        for(let listener of listeners) {
+                                            listener.onScore(this.score);
+                                        }
                                         handled = true;
                                         break;
                                     }
                                 }
                                 if(!handled) {
                                     this.gameState = GameState.GameOver;
+                                    for(let listener of listeners) {
+                                        listener.onDie(this.score, this.highScore);
+                                    }
                                     sounds.hit.play();
                                 }
                             }
@@ -179,10 +202,6 @@ class FlappyPhysics {
             y: this.player.position.y
         };
     }
-    
-    public getScore():number {
-        return this.score;
-    }
 
     public getPlayerRotation():number {
         return this.player.angle;
@@ -190,10 +209,6 @@ class FlappyPhysics {
 
     public getFloorOffsets():number[] {
         return this.floorOffsets.slice(0);
-    }
-
-    public getPlayerAlive():GameState {
-        return this.gameState;
     }
 
     public getPipeOrientations():{x:number,y:number,r:number}[] {
@@ -219,7 +234,11 @@ class FlappyPhysics {
                 }
                 this.gameState = GameState.StartGame;
                 this.pipeCounter = config.pipe.delay;
-                this.score = 0; break;
+                this.score = 0;
+                for(let listener of listeners) {
+                    listener.onReset();
+                }
+                break;
             case GameState.StartGame:
                 this.gameState = GameState.InProgress;
             case GameState.InProgress:
@@ -229,7 +248,7 @@ class FlappyPhysics {
     }
 }
 
-class FlappyGraphics {
+class FlappyGraphics implements FlappyListener {
 
     private application:PIXI.Application;
     private mask:PIXI.Graphics;
@@ -245,6 +264,7 @@ class FlappyGraphics {
     private scoreSpriteHighScore:PIXI.extras.BitmapText;
     
     constructor(physics:FlappyPhysics) {
+        listeners.push(this);
         PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
         this.application = new PIXI.Application();
         this.pipeContainer = new PIXI.Container();
@@ -281,13 +301,16 @@ class FlappyGraphics {
                 PIXI.loader.resources['images/bluebird-midflap.png'].texture
             ]);
 
+            this.animation.play();
+
             this.scoreSprite = new PIXI.Sprite(PIXI.loader.resources['images/score.png'].texture);
             this.scoreSprite.scale.x = 3;
             this.scoreSprite.scale.y = 3;
             this.scoreSprite.anchor.x = 0.5;
             this.scoreSprite.anchor.y = 0.5;
             this.scoreSprite.position.x = 144;
-            this.scoreSprite.position.y = 300;
+            this.scoreSprite.position.y = 240;
+            this.scoreSprite.visible = false;
             this.scoreSpriteScore = new PIXI.extras.BitmapText("0", { font: '12px Score' });
             this.scoreSpriteScore.anchor.x = 0.5;
             this.scoreSpriteScore.anchor.y = 0.5;
@@ -310,6 +333,8 @@ class FlappyGraphics {
             this.animation.animationSpeed = 0.15;
 
             this.bitmapText = new PIXI.extras.BitmapText("0", { font: '36px Score' });
+            this.bitmapText.position.x = 144 - this.bitmapText.width / 2;
+            this.bitmapText.position.y = 50;
 
             this.floorSprites = [];
             let floorTexture:PIXI.Texture = PIXI.loader.resources['images/floor.png'].texture;
@@ -337,30 +362,17 @@ class FlappyGraphics {
     public display(physics:FlappyPhysics):void {
         let position:{x:number,y:number} = physics.getPlayerPosition();
         let rotation:number = physics.getPlayerRotation();
-        let gameState:GameState = physics.getPlayerAlive();
+        let floorOffsets:number[] = physics.getFloorOffsets();
+        let pipeOrientations:{x:number,y:number,r:number}[] = physics.getPipeOrientations();
 
         this.animation.position.x = position.x;
         this.animation.position.y = position.y;
         this.animation.rotation = rotation;
 
-        switch(gameState) {
-            case GameState.GameOver:
-                this.animation.stop(); break;
-            case GameState.StartGame:
-                while(this.pipeSprites.length > 0) {
-                    let pipeSprite:PIXI.Sprite = this.pipeSprites.pop();
-                    this.application.stage.removeChild(pipeSprite);
-                    pipeSprite.destroy();
-                }
-                this.animation.play(); break;
-        }
-
-        let floorOffsets:number[] = physics.getFloorOffsets();
         for(let i in floorOffsets) {
             this.floorSprites[i].position.x = floorOffsets[i];
         }
 
-        let pipeOrientations:{x:number,y:number,r:number}[] = physics.getPipeOrientations();
         for(let i in pipeOrientations) {
             let sprite:PIXI.Sprite = this.pipeSprites[i];
             if(sprite == undefined) {
@@ -374,13 +386,33 @@ class FlappyGraphics {
             sprite.rotation = pipeOrientations[i].r;
         }
 
-        this.bitmapText.text = "" + physics.getScore();
-        this.bitmapText.position.x = 144 - this.bitmapText.width / 2;
-        this.bitmapText.position.y = 50;
-
         window.requestAnimationFrame(time => {
             this.display(physics);
         });
+    }
+
+
+
+    public onReset():void {
+        while(this.pipeSprites.length > 0) {
+            let pipeSprite:PIXI.Sprite = this.pipeSprites.pop();
+            this.application.stage.removeChild(pipeSprite);
+            pipeSprite.destroy();
+        }
+        this.bitmapText.text = '0';
+        this.scoreSprite.visible = false;
+        this.animation.play();
+    }
+
+    public onDie(score:number, highScore:number):void {
+        this.scoreSpriteScore.text = '' + score;
+        this.scoreSpriteHighScore.text = '' + highScore;
+        this.scoreSprite.visible = true;
+        this.animation.stop();
+    }
+
+    public onScore(score:number):void {
+        this.bitmapText.text = '' + score;
     }
 }
 
