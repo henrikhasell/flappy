@@ -260,8 +260,11 @@ class FlappyGraphics implements FlappyListener {
     private pipeSprites:PIXI.Sprite[];
     private floorSprites:PIXI.Sprite[];
     private scoreSprite:PIXI.Sprite;
-    private scoreSpriteScore:PIXI.extras.BitmapText;
-    private scoreSpriteHighScore:PIXI.extras.BitmapText;
+    private scoreText:PIXI.extras.BitmapText;
+    private highScoreText:PIXI.extras.BitmapText;
+    private leaderboardButton:PIXI.Sprite;
+    private restartButton:PIXI.Sprite;
+    private shareButton:PIXI.Sprite;
     
     constructor(physics:FlappyPhysics) {
         listeners.push(this);
@@ -278,6 +281,9 @@ class FlappyGraphics implements FlappyListener {
             'images/pipe-green.png',
             'images/background.png',
             'images/score.png',
+            'images/add-to-leaderboard.png',
+            'images/restart.png',
+            'images/share.png',
             'fonts/score.xml'
         ])
         .on('progress', (loader, resource) => {
@@ -304,23 +310,25 @@ class FlappyGraphics implements FlappyListener {
             this.animation.play();
 
             this.scoreSprite = new PIXI.Sprite(PIXI.loader.resources['images/score.png'].texture);
-            this.scoreSprite.scale.x = 3;
-            this.scoreSprite.scale.y = 3;
             this.scoreSprite.anchor.x = 0.5;
             this.scoreSprite.anchor.y = 0.5;
             this.scoreSprite.position.x = 144;
             this.scoreSprite.position.y = 240;
             this.scoreSprite.visible = false;
-            this.scoreSpriteScore = new PIXI.extras.BitmapText("0", { font: '12px Score' });
-            this.scoreSpriteScore.anchor.x = 0.5;
-            this.scoreSpriteScore.anchor.y = 0.5;
-            this.scoreSpriteScore.position.y = -7;
-            this.scoreSpriteHighScore = new PIXI.extras.BitmapText("0", { font: '12px Score' });
-            this.scoreSpriteHighScore.anchor.x = 0.5;
-            this.scoreSpriteHighScore.anchor.y = 0.5;
-            this.scoreSpriteHighScore.position.y = 14;
-            this.scoreSprite.addChild(this.scoreSpriteScore);
-            this.scoreSprite.addChild(this.scoreSpriteHighScore);
+
+            this.scoreText = new PIXI.extras.BitmapText("0", { font: '18px Score' });
+            (<any>this.scoreText).anchor.x = 0.5;
+            this.scoreText.position.y = -23;
+
+            this.highScoreText = new PIXI.extras.BitmapText("0", { font: '18px Score' });
+            (<any>this.highScoreText).anchor.x = 0.5;
+            this.highScoreText.position.y = 20;
+
+            this.leaderboardButton = new PIXI.Sprite(PIXI.loader.resources['images/add-to-leaderboard.png'].texture);
+
+            this.scoreSprite.addChild(this.scoreText);
+            this.scoreSprite.addChild(this.highScoreText);
+            this.scoreSprite.addChild(this.leaderboardButton);
 
             this.mask = new PIXI.Graphics();
             this.mask.beginFill(0xffffff, 1);
@@ -405,8 +413,8 @@ class FlappyGraphics implements FlappyListener {
     }
 
     public onDie(score:number, highScore:number):void {
-        this.scoreSpriteScore.text = '' + score;
-        this.scoreSpriteHighScore.text = '' + highScore;
+        this.scoreText.text = '' + score;
+        this.highScoreText.text = '' + highScore;
         this.scoreSprite.visible = true;
         this.animation.stop();
     }
@@ -416,4 +424,4 @@ class FlappyGraphics implements FlappyListener {
     }
 }
 
-new FlappyGraphics(new FlappyPhysics());
+let g = new FlappyGraphics(new FlappyPhysics());
