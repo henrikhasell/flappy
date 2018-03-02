@@ -325,10 +325,23 @@ class FlappyGraphics implements FlappyListener {
             this.highScoreText.position.y = 20;
 
             this.leaderboardButton = new PIXI.Sprite(PIXI.loader.resources['images/add-to-leaderboard.png'].texture);
+            this.leaderboardButton.anchor.x = 0.5;
+            this.leaderboardButton.anchor.y = 0.5;
+            this.leaderboardButton.position.y = 75;
+
+            this.restartButton = new PIXI.Sprite(PIXI.loader.resources['images/restart.png'].texture);
+            this.restartButton.anchor.x = 0.5;
+            this.restartButton.anchor.y = 0.5;
+
+            this.shareButton = new PIXI.Sprite(PIXI.loader.resources['images/share.png'].texture);
+            this.shareButton.anchor.x = 0.5;
+            this.shareButton.position.y = 75;
 
             this.scoreSprite.addChild(this.scoreText);
             this.scoreSprite.addChild(this.highScoreText);
             this.scoreSprite.addChild(this.leaderboardButton);
+            this.scoreSprite.addChild(this.restartButton);
+            this.scoreSprite.addChild(this.shareButton);
 
             this.mask = new PIXI.Graphics();
             this.mask.beginFill(0xffffff, 1);
