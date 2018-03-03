@@ -1,4 +1,5 @@
 /node_modules
+/ts/**/*.js
 /wwwroot/**/*.js
 package-lock.json 
 yarn.lock 

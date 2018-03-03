@@ -9,7 +9,7 @@ interface Configuration {
 }
 
 interface Sounds {
-    point:Howl;
+    point:Howl; 
     hit:Howl;
     wing:Howl;
 }
@@ -291,12 +291,25 @@ class FlappyGraphics implements FlappyListener {
         })
         .on('complete', (loader, resource) => {
             window.onresize = () => {
-                let ratio:number = 600 / window.innerHeight;
-                let scaledWidth:number = window.innerWidth * ratio;
-                this.application.stage.x = scaledWidth / 2 - 144;
-                this.application.renderer.resize(
-                    scaledWidth, 600
-                );
+                let ratio:number = window.innerWidth / window.innerHeight;
+                if(ratio > 0.65 || ratio < 0.48) {
+                    let scale:number = window.innerWidth * (600 / window.innerHeight);
+                    this.application.stage.x = scale / 2 - 144;
+                    this.application.stage.y = 0;
+                    this.application.renderer.resize(
+                        scale, 600
+                    );
+                }
+                else
+                {
+                    let scale:number = window.innerHeight * (288 / window.innerWidth);
+                    this.application.stage.x = 0;
+                    this.application.stage.y = scale / 2 - 300;
+                    this.application.renderer.resize(
+                        288, scale
+                    );
+                }
+                console.debug('Ratio: ' + ratio);
             };
             window.onresize(null);
 
@@ -329,19 +342,19 @@ class FlappyGraphics implements FlappyListener {
             this.leaderboardButton = new PIXI.Sprite(PIXI.loader.resources['images/add-to-leaderboard.png'].texture);
             this.leaderboardButton.anchor.x = 0.5;
             this.leaderboardButton.anchor.y = 0.5;
-            this.leaderboardButton.position.y = 128 + 28 + 14 / 2 + 14 / 2;
+            this.leaderboardButton.position.y = 170;
 
             this.restartButton = new PIXI.Sprite(PIXI.loader.resources['images/restart.png'].texture);
             this.restartButton.anchor.x = 0.5;
             this.restartButton.anchor.y = 0.5;
             this.restartButton.position.x = 50;
-            this.restartButton.position.y = 128 + 14 / 2;
+            this.restartButton.position.y = 135;
 
             this.shareButton = new PIXI.Sprite(PIXI.loader.resources['images/share.png'].texture);
             this.shareButton.anchor.x = 0.5;
             this.shareButton.anchor.y = 0.5;
             this.shareButton.position.x = -50;
-            this.shareButton.position.y = 128 + 14 / 2;
+            this.shareButton.position.y = 135;
 
             this.scoreSprite.addChild(this.scoreText);
             this.scoreSprite.addChild(this.highScoreText);
@@ -360,8 +373,10 @@ class FlappyGraphics implements FlappyListener {
             this.animation.animationSpeed = 0.15;
 
             this.bitmapText = new PIXI.extras.BitmapText("0", { font: '36px Score' });
-            this.bitmapText.position.x = 144 - this.bitmapText.width / 2;
-            this.bitmapText.position.y = 50;
+            this.bitmapText.position.x = 144;
+            this.bitmapText.position.y = 100;
+            (<any>this.bitmapText).anchor.x = 0.5;
+            (<any>this.bitmapText).anchor.y = 0.5;
 
             this.floorSprites = [];
             let floorTexture:PIXI.Texture = PIXI.loader.resources['images/floor.png'].texture;
@@ -445,4 +460,4 @@ class FlappyGraphics implements FlappyListener {
     }
 }
 
-let g = new FlappyGraphics(new FlappyPhysics());
+new FlappyGraphics(new FlappyPhysics());

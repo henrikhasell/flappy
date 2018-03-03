@@ -9,7 +9,9 @@
     "@types/matter-js": "latest",
     "@types/pixi.js": "latest",
     "gulp": "latest",
+    "gulp-concat": "latest",
     "gulp-typescript": "latest",
+    "gulp-uglify": "latest",
     "typescript": "latest"
   },
   "scripts": {

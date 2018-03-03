@@ -1,8 +1,10 @@
 var gulp = require('gulp');
 var typescript = require('gulp-typescript');
+var uglify = require('gulp-uglify');
+var concat = require('gulp-concat');
 
 gulp.task('compile', function() {
-    gulp.src('*.ts').pipe(typescript()).pipe(gulp.dest('wwwroot'))
+    gulp.src('ts/**/*.ts').pipe(typescript()).pipe(gulp.dest('ts'))
 });
 
 gulp.task('copy', function() {
@@ -14,9 +16,16 @@ gulp.task('copy', function() {
 });
 
 gulp.task('watch', function() {
-    gulp.watch('*.ts', function() {
-        gulp.start('compile');
+    gulp.watch('ts/*.ts', function() {
+        gulp.start(['compile', 'compress']);
     });
 });
 
-gulp.task('default', ['copy', 'compile']);
+gulp.task('compress', ['compile'], function () {
+    return gulp.src('./ts/**/*.js')
+        .pipe(uglify())
+        .pipe(concat('flappy.min.js'))
+        .pipe(gulp.dest('./wwwroot/'));
+  });
+
+gulp.task('default', ['copy', 'compile', 'compress']);
