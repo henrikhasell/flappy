@@ -316,26 +316,32 @@ class FlappyGraphics implements FlappyListener {
             this.scoreSprite.position.y = 240;
             this.scoreSprite.visible = false;
 
-            this.scoreText = new PIXI.extras.BitmapText("0", { font: '18px Score' });
+            this.scoreText = new PIXI.extras.BitmapText("0", { font: '36px Score' });
             (<any>this.scoreText).anchor.x = 0.5;
-            this.scoreText.position.y = -23;
+            (<any>this.scoreText).anchor.y = 0.5;
+            this.scoreText.position.y = -30;
 
-            this.highScoreText = new PIXI.extras.BitmapText("0", { font: '18px Score' });
+            this.highScoreText = new PIXI.extras.BitmapText("0", { font: '36px Score' });
             (<any>this.highScoreText).anchor.x = 0.5;
-            this.highScoreText.position.y = 20;
+            (<any>this.highScoreText).anchor.y = 0.5;
+            this.highScoreText.position.y = 44;
 
             this.leaderboardButton = new PIXI.Sprite(PIXI.loader.resources['images/add-to-leaderboard.png'].texture);
             this.leaderboardButton.anchor.x = 0.5;
             this.leaderboardButton.anchor.y = 0.5;
-            this.leaderboardButton.position.y = 75;
+            this.leaderboardButton.position.y = 128 + 28 + 14 / 2 + 14 / 2;
 
             this.restartButton = new PIXI.Sprite(PIXI.loader.resources['images/restart.png'].texture);
             this.restartButton.anchor.x = 0.5;
             this.restartButton.anchor.y = 0.5;
+            this.restartButton.position.x = 50;
+            this.restartButton.position.y = 128 + 14 / 2;
 
             this.shareButton = new PIXI.Sprite(PIXI.loader.resources['images/share.png'].texture);
             this.shareButton.anchor.x = 0.5;
-            this.shareButton.position.y = 75;
+            this.shareButton.anchor.y = 0.5;
+            this.shareButton.position.x = -50;
+            this.shareButton.position.y = 128 + 14 / 2;
 
             this.scoreSprite.addChild(this.scoreText);
             this.scoreSprite.addChild(this.highScoreText);
@@ -415,6 +421,7 @@ class FlappyGraphics implements FlappyListener {
 
 
     public onReset():void {
+        this.bitmapText.visible = true;
         while(this.pipeSprites.length > 0) {
             let pipeSprite:PIXI.Sprite = this.pipeSprites.pop();
             this.application.stage.removeChild(pipeSprite);
@@ -426,6 +433,7 @@ class FlappyGraphics implements FlappyListener {
     }
 
     public onDie(score:number, highScore:number):void {
+        this.bitmapText.visible = false;
         this.scoreText.text = '' + score;
         this.highScoreText.text = '' + highScore;
         this.scoreSprite.visible = true;
