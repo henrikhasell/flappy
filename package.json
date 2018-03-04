@@ -1,15 +1,20 @@
 {
   "dependencies": {
+    "bootstrap": "^4.0.0",
     "howler": "^2.0.9",
+    "jquery": "^3.3.1",
     "matter-js": "^0.14.1",
-    "pixi.js": "^4.7.0"
+    "pixi.js": "^4.7.0",
+    "popper.js": "^1.12.9"
   },
   "devDependencies": {
     "@types/howler": "latest",
+    "@types/jquery": "latest",
     "@types/matter-js": "latest",
     "@types/pixi.js": "latest",
     "gulp": "latest",
     "gulp-concat": "latest",
+    "gulp-sass": "latest",
     "gulp-typescript": "latest",
     "gulp-uglify": "latest",
     "typescript": "latest"

@@ -2,6 +2,7 @@
 /obj
 /node_modules
 /ts/**/*.js
+/wwwroot/**/*.css
 /wwwroot/**/*.js
 package-lock.json 
 yarn.lock 

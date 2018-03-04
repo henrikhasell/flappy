@@ -47,7 +47,6 @@ var listeners:FlappyListener[] = [];
 class FlappyPhysics {
     private engine:Matter.Engine;
     private runner:Matter.Runner;
-    private mouseConstraint:Matter.MouseConstraint;
     private player:Matter.Body;
     private floor:Matter.Body;
     private sensor:Matter.Body;
@@ -62,7 +61,6 @@ class FlappyPhysics {
     constructor() {
         this.engine = Matter.Engine.create();
         this.runner = Matter.Runner.create({delta:1000/60});
-        this.mouseConstraint = Matter.MouseConstraint.create(this.engine);
         this.player = Matter.Bodies.circle(50, 0, 10, {friction:1,restitution:0.9});
         this.floor = Matter.Bodies.rectangle(400, 544, 800, 112, {isStatic:true});
         this.sensor = Matter.Bodies.rectangle(-200, 300, 10, 600, {isSensor:true});
@@ -131,7 +129,6 @@ class FlappyPhysics {
             Matter.Body.setVelocity(this.floor, worldVelocity);
             Matter.Body.setPosition(this.sensor, {x:-100,y:300});
         });
-        Matter.Events.on(this.mouseConstraint, 'mousedown', () => this.flap());
         window.onkeydown = event => {
             if(event.key == ' ' && !event.repeat) {
                 this.flap();
@@ -269,7 +266,7 @@ class FlappyGraphics implements FlappyListener {
     constructor(physics:FlappyPhysics) {
         listeners.push(this);
         PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
-        this.application = new PIXI.Application();
+        this.application = new PIXI.Application({view:<HTMLCanvasElement>document.getElementById("flappy")});
         this.pipeContainer = new PIXI.Container();
         this.floorContainer = new PIXI.Container();
         PIXI.loader
@@ -291,27 +288,44 @@ class FlappyGraphics implements FlappyListener {
         })
         .on('complete', (loader, resource) => {
             window.onresize = () => {
-                let ratio:number = window.innerWidth / window.innerHeight;
-                if(ratio > 0.65 || ratio < 0.48) {
-                    let scale:number = window.innerWidth * (600 / window.innerHeight);
-                    this.application.stage.x = scale / 2 - 144;
-                    this.application.stage.y = 0;
-                    this.application.renderer.resize(
-                        scale, 600
-                    );
+                let fullscreen:boolean = false;
+
+                if(!fullscreen) {
+                    let w:number = this.application.view.clientWidth;
+                    let h:number = this.application.view.clientHeight;
+    
+                    let ratio:number = w / h;  
+                    if(ratio > 0.65 || ratio < 0.48) {
+                        let scale:number = w * (600 / h);
+                        this.application.stage.x = scale / 2 - 144;
+                        this.application.stage.y = 0;
+                        this.application.renderer.resize(
+                            scale, 600
+                        );
+                    }
+                    else
+                    {
+                        let scale:number = h * (288 / w);
+                        this.application.stage.x = 0;
+                        this.application.stage.y = scale / 2 - 300;
+                        this.application.renderer.resize(
+                            288, scale
+                        );
+                    }
                 }
-                else
-                {
-                    let scale:number = window.innerHeight * (288 / window.innerWidth);
-                    this.application.stage.x = 0;
-                    this.application.stage.y = scale / 2 - 300;
-                    this.application.renderer.resize(
-                        288, scale
-                    );
-                }
-                console.debug('Ratio: ' + ratio);
             };
             window.onresize(null);
+
+            this.application.view.onmousedown = () => { 
+                let func = (<any>this.application.view).requestFullscreen
+                        || (<any>this.application.view).webkitRequestFullScreen
+                        || (<any>this.application.view).mozRequestFullScreen
+                        || (<any>this.application.view).msRequestFullscreen;
+                if(func) {
+                    func.call(this.application.view);
+                }
+                physics.flap();
+            }
 
             this.animation = new PIXI.extras.AnimatedSprite([
                 PIXI.loader.resources['images/bluebird-downflap.png'].texture,
@@ -395,7 +409,7 @@ class FlappyGraphics implements FlappyListener {
             this.application.stage.addChild(this.bitmapText);
             this.application.stage.addChild(this.scoreSprite);
             this.application.stage.addChild(this.mask);
-            document.body.appendChild(this.application.view);
+            //document.body.appendChild(this.application.view);
             this.display(physics);
         })
         .load();
