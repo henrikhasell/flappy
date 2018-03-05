@@ -316,7 +316,12 @@ class FlappyGraphics implements FlappyListener {
             };
             window.onresize(null);
 
-            this.application.view.onmousedown = () => { 
+            this.application.view.onmousedown = (event:MouseEvent) => {
+                if(event.button == 0) {
+                    physics.flap();
+                }
+            }
+            this.application.view.ontouchstart = () => {
                 let func = (<any>this.application.view).requestFullscreen
                         || (<any>this.application.view).webkitRequestFullScreen
                         || (<any>this.application.view).mozRequestFullScreen
