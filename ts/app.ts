@@ -22,13 +22,13 @@ var config:Configuration = {
 
 var sounds:Sounds = {
     point: new Howl({
-        src:'audio/point.ogg'
+        src:'/audio/point.ogg'
     }),
     hit: new Howl({
-        src:'audio/hit.ogg'
+        src:'/audio/hit.ogg'
     }),
     wing: new Howl({
-        src:'audio/wing.ogg'
+        src:'/audio/wing.ogg'
     })
 };
 
@@ -243,6 +243,10 @@ class FlappyPhysics {
                 sounds.wing.play();
         }
     }
+
+    public getScore():number {
+        return this.score;
+    }
 }
 
 class FlappyGraphics implements FlappyListener {
@@ -262,6 +266,7 @@ class FlappyGraphics implements FlappyListener {
     private leaderboardButton:PIXI.Sprite;
     private restartButton:PIXI.Sprite;
     private shareButton:PIXI.Sprite;
+    private touch:PIXI.Graphics;
     
     constructor(physics:FlappyPhysics) {
         listeners.push(this);
@@ -271,17 +276,17 @@ class FlappyGraphics implements FlappyListener {
         this.floorContainer = new PIXI.Container();
         PIXI.loader
         .add([
-            'images/bluebird-downflap.png',
-            'images/bluebird-midflap.png',
-            'images/bluebird-upflap.png',
-            'images/floor.png',
-            'images/pipe-green.png',
-            'images/background.png',
-            'images/score.png',
-            'images/add-to-leaderboard.png',
-            'images/restart.png',
-            'images/share.png',
-            'fonts/score.xml'
+            '/images/bluebird-downflap.png',
+            '/images/bluebird-midflap.png',
+            '/images/bluebird-upflap.png',
+            '/images/floor.png',
+            '/images/pipe-green.png',
+            '/images/background.png',
+            '/images/score.png',
+            '/images/add-to-leaderboard.png',
+            '/images/restart.png',
+            '/images/share.png',
+            '/fonts/score.xml'
         ])
         .on('progress', (loader, resource) => {
             console.info('Loaded resource ' + resource.name);
@@ -316,32 +321,16 @@ class FlappyGraphics implements FlappyListener {
             };
             window.onresize(null);
 
-            this.application.view.onmousedown = (event:MouseEvent) => {
-                if(event.button == 0) {
-                    physics.flap();
-                }
-            }
-            this.application.view.ontouchstart = () => {
-                let func = (<any>this.application.view).requestFullscreen
-                        || (<any>this.application.view).webkitRequestFullScreen
-                        || (<any>this.application.view).mozRequestFullScreen
-                        || (<any>this.application.view).msRequestFullscreen;
-                if(func) {
-                    func.call(this.application.view);
-                }
-                physics.flap();
-            }
-
             this.animation = new PIXI.extras.AnimatedSprite([
-                PIXI.loader.resources['images/bluebird-downflap.png'].texture,
-                PIXI.loader.resources['images/bluebird-midflap.png'].texture,
-                PIXI.loader.resources['images/bluebird-upflap.png'].texture,
-                PIXI.loader.resources['images/bluebird-midflap.png'].texture
+                PIXI.loader.resources['/images/bluebird-downflap.png'].texture,
+                PIXI.loader.resources['/images/bluebird-midflap.png'].texture,
+                PIXI.loader.resources['/images/bluebird-upflap.png'].texture,
+                PIXI.loader.resources['/images/bluebird-midflap.png'].texture
             ]);
 
             this.animation.play();
 
-            this.scoreSprite = new PIXI.Sprite(PIXI.loader.resources['images/score.png'].texture);
+            this.scoreSprite = new PIXI.Sprite(PIXI.loader.resources['/images/score.png'].texture);
             this.scoreSprite.anchor.x = 0.5;
             this.scoreSprite.anchor.y = 0.5;
             this.scoreSprite.position.x = 144;
@@ -358,22 +347,65 @@ class FlappyGraphics implements FlappyListener {
             (<any>this.highScoreText).anchor.y = 0.5;
             this.highScoreText.position.y = 44;
 
-            this.leaderboardButton = new PIXI.Sprite(PIXI.loader.resources['images/add-to-leaderboard.png'].texture);
+            this.leaderboardButton = new PIXI.Sprite(PIXI.loader.resources['/images/add-to-leaderboard.png'].texture);
             this.leaderboardButton.anchor.x = 0.5;
             this.leaderboardButton.anchor.y = 0.5;
             this.leaderboardButton.position.y = 170;
 
-            this.restartButton = new PIXI.Sprite(PIXI.loader.resources['images/restart.png'].texture);
+            this.restartButton = new PIXI.Sprite(PIXI.loader.resources['/images/restart.png'].texture);
             this.restartButton.anchor.x = 0.5;
             this.restartButton.anchor.y = 0.5;
             this.restartButton.position.x = 50;
             this.restartButton.position.y = 135;
 
-            this.shareButton = new PIXI.Sprite(PIXI.loader.resources['images/share.png'].texture);
+            this.shareButton = new PIXI.Sprite(PIXI.loader.resources['/images/share.png'].texture);
             this.shareButton.anchor.x = 0.5;
             this.shareButton.anchor.y = 0.5;
             this.shareButton.position.x = -50;
             this.shareButton.position.y = 135;
+
+            this.shareButton.interactive = true;
+            this.shareButton.buttonMode = true;
+            this.shareButton.on('pointerup', () => {
+                window.location.href = 'Home/Share';
+            });
+            
+            this.leaderboardButton.interactive = true;
+            this.leaderboardButton.buttonMode = true;
+            this.leaderboardButton.on('pointerup', () => {
+                window.location.href = 'Home/Leaderboard?score=' + physics.getScore();
+            });
+            
+            this.shareButton.interactive = true;
+            this.shareButton.buttonMode = true;
+            this.shareButton.on('pointerup', () => {
+                window.location.href = 'Home/Share';
+            });
+            
+            this.restartButton.interactive = true;
+            this.restartButton.buttonMode = true;
+            this.restartButton.on('pointerup', () => {
+                physics.flap();
+            });
+
+            this.touch = new PIXI.Graphics();
+            this.touch.beginFill(0xFF0000, 0);
+            this.touch.drawRect(0, 0, 288, 600);
+
+            this.touch.interactive = true;
+            this.touch.on('pointerdown', () => {
+                physics.flap();
+            });
+            
+            this.application.view.onpointerdown = () => {
+                let func = (<any>this.application.view).requestFullscreen
+                || (<any>this.application.view).webkitRequestFullScreen
+                || (<any>this.application.view).mozRequestFullScreen
+                || (<any>this.application.view).msRequestFullscreen;
+                if(func) {
+                    func.call(this.application.view);
+                }
+            }
 
             this.scoreSprite.addChild(this.scoreText);
             this.scoreSprite.addChild(this.highScoreText);
@@ -398,7 +430,7 @@ class FlappyGraphics implements FlappyListener {
             (<any>this.bitmapText).anchor.y = 0.5;
 
             this.floorSprites = [];
-            let floorTexture:PIXI.Texture = PIXI.loader.resources['images/floor.png'].texture;
+            let floorTexture:PIXI.Texture = PIXI.loader.resources['/images/floor.png'].texture;
             for(let i:number = 0; i < 5; i ++) {
                 let section:PIXI.Sprite = new PIXI.Sprite(floorTexture);
                 section.position.y = 600 - floorTexture.height;
@@ -406,15 +438,15 @@ class FlappyGraphics implements FlappyListener {
                 this.floorSprites.push(section);
             }
             this.pipeSprites = [];
-            this.background = new PIXI.Sprite(PIXI.loader.resources['images/background.png'].texture);
+            this.background = new PIXI.Sprite(PIXI.loader.resources['/images/background.png'].texture);
             this.application.stage.addChild(this.background);
             this.application.stage.addChild(this.pipeContainer);
             this.application.stage.addChild(this.floorContainer);
             this.application.stage.addChild(this.animation);
             this.application.stage.addChild(this.bitmapText);
+            this.application.stage.addChild(this.touch);
             this.application.stage.addChild(this.scoreSprite);
             this.application.stage.addChild(this.mask);
-            //document.body.appendChild(this.application.view);
             this.display(physics);
         })
         .load();
@@ -437,7 +469,7 @@ class FlappyGraphics implements FlappyListener {
         for(let i in pipeOrientations) {
             let sprite:PIXI.Sprite = this.pipeSprites[i];
             if(sprite == undefined) {
-                sprite = this.pipeSprites[i] = new PIXI.Sprite(PIXI.loader.resources['images/pipe-green.png'].texture);
+                sprite = this.pipeSprites[i] = new PIXI.Sprite(PIXI.loader.resources['/images/pipe-green.png'].texture);
                 sprite.anchor.x = 0.5;
                 sprite.anchor.y = 0.5;
                 this.pipeContainer.addChild(sprite);
@@ -451,8 +483,6 @@ class FlappyGraphics implements FlappyListener {
             this.display(physics);
         });
     }
-
-
 
     public onReset():void {
         this.bitmapText.visible = true;

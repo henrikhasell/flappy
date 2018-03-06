@@ -42,8 +42,8 @@ gulp.task('sass', function () {
 });
 
 gulp.task('watch', function() {
-    gulp.watch('ts/*.ts', ['compile', 'compress']);
+    gulp.watch('ts/*.ts', ['compress']);
     gulp.watch('sass/*.{sass,scss}', ['sass']);
 });
 
-gulp.task('default', ['copy', 'compile', 'compress', 'sass']);
+gulp.task('default', ['copy', 'compress', 'sass']);

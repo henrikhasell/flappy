@@ -8,5 +8,27 @@ namespace Flappy.Controllers
         {
             return View();
         }
+
+        [HttpGet]
+        public IActionResult Leaderboard()
+        {
+            return View("SubmitScore");
+        }
+
+        [HttpPost]
+        public IActionResult Leaderboard([FromForm]int score, [FromForm]string name)
+        {
+            return View("SubmitScore");
+        }
+        
+        public IActionResult About()
+        {
+            return View();
+        }
+
+        public IActionResult Share()
+        {
+            return View();
+        }
     }
 }

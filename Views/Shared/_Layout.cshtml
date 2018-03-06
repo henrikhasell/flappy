@@ -16,19 +16,20 @@
             <div class="collapse navbar-collapse" id="aaa">
                 <ul class="navbar-nav mr-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Home</a>
+                        <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Leaderboard</a>
+                        <a class="nav-link"asp-controller="Home" asp-action="Leaderboard">Leaderboard</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">About</a>
+                        <a class="nav-link"asp-controller="Home" asp-action="About">About</a>
                     </li>
                 </ul>
             </div>
         </nav>
-
-        @RenderBody()
+        <div class="container">
+            @RenderBody()
+        </div>
         <script src="~/jquery.min.js"></script>
         <script src="~/bootstrap.min.js"></script>
     </body>
