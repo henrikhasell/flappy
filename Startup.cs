@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,6 +18,8 @@ namespace Flappy
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc();
+            services.AddDbContext<DatabaseContext>(options =>
+                options.UseSqlite("Data Source=Flappy.sqlite3"));
         }
 
         public void Configure(IApplicationBuilder application, IHostingEnvironment environment)

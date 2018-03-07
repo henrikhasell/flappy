@@ -1,26 +1,54 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Flappy.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Flappy.Controllers
 {
     public class HomeController : Controller
     {
+        private readonly DatabaseContext database;
+
+        public HomeController(DatabaseContext database)
+        {
+            this.database = database;
+        }
+
         public IActionResult Index()
         {
             return View();
         }
 
         [HttpGet]
-        public IActionResult Leaderboard()
+        public async Task<IActionResult> Leaderboard()
         {
-            return View("SubmitScore");
+            IEnumerable<Score> scores = await database.Scores
+                .OrderByDescending(i => i.Value).ThenBy(i => i.Time).ToListAsync();
+
+            return View(scores);
         }
 
         [HttpPost]
-        public IActionResult Leaderboard([FromForm]int score, [FromForm]string name)
+        public async Task<IActionResult> Leaderboard([Bind("Name","Value")]Score score)
         {
-            return View("SubmitScore");
+            if(ModelState.IsValid)
+            {
+                score.Time = DateTime.Now;
+
+                await database.Scores.AddAsync(score);
+                await database.SaveChangesAsync();
+
+                return RedirectToAction("Leaderboard");
+            }
+            else
+            {
+                return View("SubmitScore", score);
+            }
         }
-        
+
         public IActionResult About()
         {
             return View();

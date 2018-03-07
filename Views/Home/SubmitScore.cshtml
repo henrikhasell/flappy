@@ -1,2 +1,10 @@
 ﻿@{ ViewData["Title"] = "Leaderboard"; }
+@using Flappy.Models
+@model Score
 <h1>Submit Score</h1>
+<h2>Your Score Is @Model.Value</h2>
+<form method="POST" asp-action="Leaderboard">
+    <input name="value" type="hidden" value="@Model.Value"/>
+    <input name="name" type="text" value="@Model.Name"/>
+    <input name="submit" type="submit"/>
+</form>

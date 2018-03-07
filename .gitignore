@@ -4,5 +4,7 @@
 /ts/**/*.js
 /wwwroot/**/*.css
 /wwwroot/**/*.js
+/Migrations
+/Flappy.sqlite3
 package-lock.json 
 yarn.lock 

@@ -268,10 +268,10 @@ class FlappyGraphics implements FlappyListener {
     private shareButton:PIXI.Sprite;
     private touch:PIXI.Graphics;
     
-    constructor(physics:FlappyPhysics) {
+    constructor(physics:FlappyPhysics, canvas?:HTMLCanvasElement) {
         listeners.push(this);
         PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
-        this.application = new PIXI.Application({view:<HTMLCanvasElement>document.getElementById("flappy")});
+        this.application = new PIXI.Application({view:canvas});
         this.pipeContainer = new PIXI.Container();
         this.floorContainer = new PIXI.Container();
         PIXI.loader
@@ -319,7 +319,6 @@ class FlappyGraphics implements FlappyListener {
                     }
                 }
             };
-            window.onresize(null);
 
             this.animation = new PIXI.extras.AnimatedSprite([
                 PIXI.loader.resources['/images/bluebird-downflap.png'].texture,
@@ -373,7 +372,16 @@ class FlappyGraphics implements FlappyListener {
             this.leaderboardButton.interactive = true;
             this.leaderboardButton.buttonMode = true;
             this.leaderboardButton.on('pointerup', () => {
-                window.location.href = 'Home/Leaderboard?score=' + physics.getScore();
+                let input:HTMLInputElement = document.createElement("input");
+                input.setAttribute('type', 'hidden');
+                input.setAttribute('name', 'value');
+                input.setAttribute('value', '' + physics.getScore());
+                let form:HTMLFormElement = document.createElement("form");
+                form.method = "post";
+                form.action = "Home/Leaderboard";
+                form.appendChild(input);
+                document.body.appendChild(form);
+                form.submit();
             });
             
             this.shareButton.interactive = true;
@@ -447,6 +455,10 @@ class FlappyGraphics implements FlappyListener {
             this.application.stage.addChild(this.touch);
             this.application.stage.addChild(this.scoreSprite);
             this.application.stage.addChild(this.mask);
+            if(!canvas) {
+                document.body.appendChild(this.application.view);
+            }
+            window.onresize(null);
             this.display(physics);
         })
         .load();
@@ -457,7 +469,6 @@ class FlappyGraphics implements FlappyListener {
         let rotation:number = physics.getPlayerRotation();
         let floorOffsets:number[] = physics.getFloorOffsets();
         let pipeOrientations:{x:number,y:number,r:number}[] = physics.getPipeOrientations();
-
         this.animation.position.x = position.x;
         this.animation.position.y = position.y;
         this.animation.rotation = rotation;
