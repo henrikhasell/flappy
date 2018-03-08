@@ -56,6 +56,7 @@ class FlappyPhysics {
     private pipeCounter:number;
     private score:number;
     private highScore:number;
+    private cooldown:number;
     private gameState:GameState;
 
     constructor() {
@@ -73,6 +74,7 @@ class FlappyPhysics {
         this.pipeCounter = 0;
         this.score = 0;
         this.highScore = 0;
+        this.cooldown = 0;
         this.gameState = GameState.StartGame;
 
         Matter.World.add(this.engine.world, [this.player, this.floor, this.sensor]);
@@ -128,6 +130,7 @@ class FlappyPhysics {
 
             Matter.Body.setVelocity(this.floor, worldVelocity);
             Matter.Body.setPosition(this.sensor, {x:-100,y:300});
+            this.cooldown--;
         });
         window.onkeydown = event => {
             if(event.key == ' ' && !event.repeat) {
@@ -162,7 +165,8 @@ class FlappyPhysics {
                                     }
                                 }
                                 if(!handled) {
-                                    this.gameState = GameState.GameOver;
+                                    this.gameState = GameState.GameOver;         
+                                    this.cooldown = 20;
                                     for(let listener of listeners) {
                                         listener.onDie(this.score, this.highScore);
                                     }
@@ -221,6 +225,8 @@ class FlappyPhysics {
     }
 
     public flap():void {
+        if(this.cooldown > 0)
+            return;
         switch(this.gameState) {
             case GameState.GameOver:
                 while(this.pipes.length > 0) {
@@ -264,6 +270,7 @@ class FlappyGraphics implements FlappyListener {
     private scoreText:PIXI.extras.BitmapText;
     private highScoreText:PIXI.extras.BitmapText;
     private leaderboardButton:PIXI.Sprite;
+    private leaderboardButtonGlow:PIXI.Sprite;
     private restartButton:PIXI.Sprite;
     private shareButton:PIXI.Sprite;
     private touch:PIXI.Graphics;
@@ -284,6 +291,7 @@ class FlappyGraphics implements FlappyListener {
             '/images/background.png',
             '/images/score.png',
             '/images/add-to-leaderboard.png',
+            '/images/add-to-leaderboard-glow.png',
             '/images/restart.png',
             '/images/share.png',
             '/fonts/score.xml'
@@ -351,6 +359,12 @@ class FlappyGraphics implements FlappyListener {
             this.leaderboardButton.anchor.y = 0.5;
             this.leaderboardButton.position.y = 170;
 
+            this.leaderboardButtonGlow = new PIXI.Sprite(PIXI.loader.resources['/images/add-to-leaderboard-glow.png'].texture);
+            this.leaderboardButtonGlow.anchor.x = 0.5;
+            this.leaderboardButtonGlow.anchor.y = 0.5;
+            this.leaderboardButtonGlow.position.x = this.leaderboardButton.position.x;
+            this.leaderboardButtonGlow.position.y = this.leaderboardButton.position.y;
+
             this.restartButton = new PIXI.Sprite(PIXI.loader.resources['/images/restart.png'].texture);
             this.restartButton.anchor.x = 0.5;
             this.restartButton.anchor.y = 0.5;
@@ -368,7 +382,7 @@ class FlappyGraphics implements FlappyListener {
             this.shareButton.on('pointerup', () => {
                 window.location.href = 'Home/Share';
             });
-            
+
             this.leaderboardButton.interactive = true;
             this.leaderboardButton.buttonMode = true;
             this.leaderboardButton.on('pointerup', () => {
@@ -422,6 +436,7 @@ class FlappyGraphics implements FlappyListener {
             */
             this.scoreSprite.addChild(this.scoreText);
             this.scoreSprite.addChild(this.highScoreText);
+            this.scoreSprite.addChild(this.leaderboardButtonGlow);
             this.scoreSprite.addChild(this.leaderboardButton);
             this.scoreSprite.addChild(this.restartButton);
             this.scoreSprite.addChild(this.shareButton);
@@ -494,6 +509,8 @@ class FlappyGraphics implements FlappyListener {
             sprite.position.y = pipeOrientations[i].y;
             sprite.rotation = pipeOrientations[i].r;
         }
+
+        this.leaderboardButtonGlow.alpha = (Math.sin(new Date().getTime() / 500) + 1) / 2;
 
         window.requestAnimationFrame(time => {
             this.display(physics);

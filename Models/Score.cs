@@ -8,6 +8,8 @@ namespace Flappy.Models
         [Key]
         public int Id {set; get;}
 
+        public string Address { set; get; }
+
         [DisplayFormat(/* TODO */)]
         public DateTime Time {set; get;}
 
