@@ -1,10 +1,31 @@
 ﻿@{ ViewData["Title"] = "Leaderboard"; }
 @using Flappy.Models
 @model Score
-<h1>Submit Score</h1>
-<h2>Your Score Is @Model.Value</h2>
-<form method="POST" asp-action="Leaderboard">
-    <input name="value" type="hidden" value="@Model.Value"/>
-    <input name="name" type="text" value="@Model.Name"/>
-    <input name="submit" type="submit"/>
-</form>
+<div class="card" style="margin-top:20px">
+    <h5 class="card-header">Submit Your Score</h5>
+    <div class="card-body">
+    <h5 class="card-title">Your score is: @Model.Value</h5>
+    <p>Enter your name to submit your score to the leaderboard.</p>
+    <form class="form" method="POST" asp-action="Leaderboard">
+        <input name="value" type="hidden" value="@Model.Value"/>
+        @if(ViewBag.validate && !ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger mb-3">
+            @foreach(ModelStateEntry modelStateEntry in ViewData.ModelState.Values)
+            {
+                @foreach(ModelError i in modelStateEntry.Errors)
+                {
+                    <div>@i.ErrorMessage</div>
+                }
+            }
+            </div>
+        }
+        <div class="input-group mb-3">
+            <input class="form-control" type="text" placeholder="Enter your name here." asp-for="Name" maxlength="16">
+            <div class="input-group-append">
+                <input class="btn btn-outline-primary" type="submit"/>
+            </div>
+        </div>
+    </form>
+    </div>
+</div>  

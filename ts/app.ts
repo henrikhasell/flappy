@@ -372,14 +372,19 @@ class FlappyGraphics implements FlappyListener {
             this.leaderboardButton.interactive = true;
             this.leaderboardButton.buttonMode = true;
             this.leaderboardButton.on('pointerup', () => {
-                let input:HTMLInputElement = document.createElement("input");
-                input.setAttribute('type', 'hidden');
-                input.setAttribute('name', 'value');
-                input.setAttribute('value', '' + physics.getScore());
+                let scoreInput:HTMLInputElement = document.createElement("input");
+                scoreInput.setAttribute('type', 'hidden');
+                scoreInput.setAttribute('name', 'value');
+                scoreInput.setAttribute('value', '' + physics.getScore());
+                let validInput:HTMLInputElement = document.createElement("input");
+                validInput.setAttribute('type', 'hidden');
+                validInput.setAttribute('name', 'validate');
+                validInput.setAttribute('value', 'false');
                 let form:HTMLFormElement = document.createElement("form");
                 form.method = "post";
                 form.action = "Home/Leaderboard";
-                form.appendChild(input);
+                form.appendChild(scoreInput);
+                form.appendChild(validInput);
                 document.body.appendChild(form);
                 form.submit();
             });
@@ -404,7 +409,7 @@ class FlappyGraphics implements FlappyListener {
             this.touch.on('pointerdown', () => {
                 physics.flap();
             });
-            
+            /*
             this.application.view.onpointerdown = () => {
                 let func = (<any>this.application.view).requestFullscreen
                 || (<any>this.application.view).webkitRequestFullScreen
@@ -414,7 +419,7 @@ class FlappyGraphics implements FlappyListener {
                     func.call(this.application.view);
                 }
             }
-
+            */
             this.scoreSprite.addChild(this.scoreText);
             this.scoreSprite.addChild(this.highScoreText);
             this.scoreSprite.addChild(this.leaderboardButton);

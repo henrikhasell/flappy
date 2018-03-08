@@ -32,7 +32,7 @@ namespace Flappy.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Leaderboard([Bind("Name","Value")]Score score)
+        public async Task<IActionResult> Leaderboard([Bind("Name","Value")]Score score, bool? validate=true)
         {
             if(ModelState.IsValid)
             {
@@ -45,6 +45,7 @@ namespace Flappy.Controllers
             }
             else
             {
+                ViewBag.Validate = validate;
                 return View("SubmitScore", score);
             }
         }

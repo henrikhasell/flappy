@@ -11,10 +11,10 @@ namespace Flappy.Models
         [DisplayFormat(/* TODO */)]
         public DateTime Time {set; get;}
 
-        [Required]
+        [MaxLength(16, ErrorMessage="Maximum name length is 16 characters."), Required(ErrorMessage="Please enter your name.")]
         public string Name {set; get;}
 
-        [Required]
+        [Required(ErrorMessage="Score value is missing. Refresh the page.")]
         public int Value {set; get;}
     }
 }
