@@ -1,22 +1,25 @@
 ﻿@{ ViewData["Title"] = "Leaderboard"; }
 @using Flappy.Models
-@model IEnumerable<Score>
+@model IList<Score>
 <h1>Leaderboard</h1>
 <table class="table table-hover table-sm">
     <thead>
         <tr>
-            <th>@Html.DisplayNameFor(i => i.Time)</th>
-            <th>@Html.DisplayNameFor(i => i.Name)</th>
-            <th>@Html.DisplayNameFor(i => i.Value)</th>
+            <th>#</th>
+            <th>@Html.DisplayNameFor(i => i[0].Time)</th>
+            <th>@Html.DisplayNameFor(i => i[0].Name)</th>
+            <th>@Html.DisplayNameFor(i => i[0].Value)</th>
         </tr>
     </thead>
     <tbody>
-        @foreach(Score score in Model)
+        @for(int i = 0; i < Model.Count; i++)
         {
+            Score score = Model[i];
             <tr>
-                <td>@Html.DisplayFor(i => score.Time)</td>
-                <td>@Html.DisplayFor(i => score.Name)</td>
-                <td>@Html.DisplayFor(i => score.Value)</td>
+                <td>@(i + 1)</td>
+                <td>@Html.DisplayFor(j => score.Time)</td>
+                <td>@Html.DisplayFor(j => score.Name)</td>
+                <td>@Html.DisplayFor(j => score.Value)</td>
             </tr>
         }
     </tbody>

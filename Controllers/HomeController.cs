@@ -25,13 +25,13 @@ namespace Flappy.Controllers
         [HttpGet]
         public async Task<IActionResult> Leaderboard()
         {
-            IEnumerable<Score> scores = await database.Scores
+            IList<Score> scores = await database.Scores
                 .OrderByDescending(i => i.Value).ThenBy(i => i.Time).ToListAsync();
 
             return View(scores);
         }
 
-        [HttpPost, ValidateAntiForgeryToken]
+        [HttpPost]
         public async Task<IActionResult> Leaderboard([Bind("Name","Value")]Score score, bool? validate=true)
         {
             if(ModelState.IsValid)
