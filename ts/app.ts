@@ -22,13 +22,13 @@ var config:Configuration = {
 
 var sounds:Sounds = {
     point: new Howl({
-        src:'/audio/point.ogg'
+        src:['/audio/point.ogg', '/audio/point.mp3']
     }),
     hit: new Howl({
-        src:'/audio/hit.ogg'
+        src:['/audio/hit.ogg', '/audio/hit.mp3']
     }),
     wing: new Howl({
-        src:'/audio/wing.ogg'
+        src:['/audio/wing.ogg', '/audio/wing.mp3']
     })
 };
 
