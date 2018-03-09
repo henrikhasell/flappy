@@ -4,7 +4,8 @@ const enum GameState {
 
 interface Configuration {
     force:number;
-    speed:number;
+	speed: number;
+	variance: number;
     pipe: { delay:number, gap:number };
 }
 
@@ -15,9 +16,10 @@ interface Sounds {
 }
 
 var config:Configuration = {
-    force:6,
-    speed:3,
-    pipe: { delay:100, gap:100 }
+    force:6.4,
+	speed: 2.4,
+	variance: 225,
+    pipe: { delay:100, gap:88 }
 };
 
 var sounds:Sounds = {
@@ -90,8 +92,10 @@ class FlappyPhysics {
             switch(this.gameState) {
                 case GameState.InProgress:
                     if(--this.pipeCounter <= 0) {
+						let height: number = (Math.random() * config.variance - config.variance / 2) + 300;
+						console.debug("Height: " + height);
                         for(let flipped of [true, false]) {
-                            this.createPipe(300, flipped);
+                            this.createPipe(height, flipped);
                         }
                         let pipeSensor:Matter.Body = Matter.Bodies.rectangle(375, 300, 5, 600, { isStatic:true, isSensor: true });
                         Matter.World.add(this.engine.world, pipeSensor);
@@ -200,7 +204,7 @@ class FlappyPhysics {
 
     public createPipe(height:number, flipped:boolean):Matter.Body {
         let result:Matter.Body =
-            Matter.Bodies.rectangle(375, 300 + (160+config.pipe.gap/2) * (flipped ? -1 : 1), 52, 320, {isStatic:true,angle:flipped ? Math.PI : 0});// WTF is this ungliness?
+            Matter.Bodies.rectangle(375, height + (160+config.pipe.gap/2) * (flipped ? -1 : 1), 52, 320, {isStatic:true,angle:flipped ? Math.PI : 0});// WTF is this ungliness?
         Matter.World.add(this.engine.world, result);
         this.pipes.push(result);
         return result;

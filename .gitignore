@@ -1,7 +1,10 @@
+/.vs
+/.vscode
 /bin
 /obj
 /node_modules
 /ts/**/*.js
+/ts/**/*.js.map
 /wwwroot/**/*.css
 /wwwroot/**/*.js
 /Migrations
