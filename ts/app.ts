@@ -333,8 +333,6 @@ class FlappyGraphics implements FlappyListener {
                         this.application.stage.y = scale / 2 - 300;
                         this.application.renderer.resize(288, scale);
                     }
-                    
-                    console.debug("Ratio: " + ratio);
 
                     if(ratio < 0.54) {
                         this.titleSprite.position.y = this.bitmapText.position.y = 75;
