@@ -6,11 +6,11 @@
     <div class="card-body">
     <h5 class="card-title">Your score is: @Model.Value</h5>
     <p>Enter your name to submit your score to the leaderboard.</p>
-    <form class="form" method="POST" asp-action="Leaderboard">
+    <form class="form" method="post" asp-action="Leaderboard">
         <input name="value" type="hidden" value="@Model.Value"/>
         @if(ViewBag.validate && !ViewData.ModelState.IsValid)
         {
-            <div class="alert alert-danger mb-3">
+            <div class="alert alert-danger my-3">
             @foreach(ModelStateEntry modelStateEntry in ViewData.ModelState.Values)
             {
                 @foreach(ModelError i in modelStateEntry.Errors)

@@ -11,7 +11,7 @@ gulp.task('compile', function() {
 gulp.task('copy', ['copy-js', 'copy-css']);
 
 gulp.task('copy-js', function() {
-    gulp.src([
+    return gulp.src([
         'node_modules/bootstrap/dist/js/bootstrap.min.js',
         'node_modules/popper.js/dist/popper.min.js',
         'node_modules/jquery/dist/jquery.min.js',
@@ -22,20 +22,20 @@ gulp.task('copy-js', function() {
 });
 
 gulp.task('copy-css', function() {
-    gulp.src([
+    return gulp.src([
         'node_modules/bootstrap/dist/css/bootstrap.min.css'
     ]).pipe(gulp.dest('wwwroot'));
 });
 
 gulp.task('compress', ['compile'], function () {
-    gulp.src('./ts/**/*.js')
+    return gulp.src('./ts/**/*.js')
         .pipe(uglify())
         .pipe(concat('flappy.min.js'))
         .pipe(gulp.dest('./wwwroot/'));
 });
 
 gulp.task('sass', function () {
-    gulp.src('./sass/**/*.{sass,scss}')
+    return gulp.src('./sass/**/*.{sass,scss}')
         .pipe(sass())
         .pipe(concat('style.css'))
         .pipe(gulp.dest('./wwwroot/'));

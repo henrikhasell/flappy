@@ -31,7 +31,7 @@ namespace Flappy.Controllers
             return View(scores);
         }
 
-        [HttpPost]
+        [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Leaderboard([Bind("Name","Value")]Score score, bool? validate=true)
         {
             if(ModelState.IsValid)

@@ -38,11 +38,18 @@ const enum FlappyEvent {
 
 interface FlappyListener {
     onReset:() => void;
+    onGameStart:() => void;
     onDie:(score:number, highScore:number) => void;
     onScore:(score:number) => void;
 }
 
 var listeners:FlappyListener[] = [];
+
+var relativeTime:Date = new Date();
+
+function elapsed():number {
+    return new Date().getTime() - relativeTime.getTime();
+}
 
 class FlappyPhysics {
     private engine:Matter.Engine;
@@ -68,7 +75,7 @@ class FlappyPhysics {
         this.pipes = [];
         this.pipeSensors = [];
         this.floorOffsets = [];
-        for(let i = 0; i < 5; i++) {
+        for(let i = 0; i < 2; i++) {
             this.floorOffsets.push(i * 336);
         }
         this.pipeCounter = 0;
@@ -86,7 +93,7 @@ class FlappyPhysics {
                         for(let flipped of [true, false]) {
                             this.createPipe(300, flipped);
                         }
-                        let pipeSensor:Matter.Body = Matter.Bodies.rectangle(900, 300, 5, 600, { isStatic:true, isSensor: true });
+                        let pipeSensor:Matter.Body = Matter.Bodies.rectangle(375, 300, 5, 600, { isStatic:true, isSensor: true });
                         Matter.World.add(this.engine.world, pipeSensor);
                         this.pipeSensors.push(pipeSensor);
                         this.pipeCounter = config.pipe.delay;
@@ -97,10 +104,11 @@ class FlappyPhysics {
                     }
                     break;
                 case GameState.StartGame:
-                    Matter.Body.setPosition(this.player, { x: 50, y: 300 });
+                    Matter.Body.setPosition(this.player, { x: 50, y: 275 + Math.sin(elapsed() / 250) * 15});
                     Matter.Body.setVelocity(this.player, { x: 0, y: 0 });
                     Matter.Body.setAngle(this.player, 0);
                     Matter.Body.setAngularVelocity(this.player, 0);
+                    break;
                 case GameState.GameOver:
                     worldVelocity = { x: 0, y: 0 };
                     break;
@@ -184,14 +192,15 @@ class FlappyPhysics {
                             }
                             break;
                     }
-                }
+                }   
             }
         });
         Matter.Runner.run(this.runner, this.engine);
     }
 
     public createPipe(height:number, flipped:boolean):Matter.Body {
-        let result:Matter.Body = Matter.Bodies.rectangle(900, 300 + (160+config.pipe.gap/2) * (flipped ? -1 : 1), 52, 320, {isStatic:true,angle:flipped ? Math.PI : 0});// WTF is this ungliness?
+        let result:Matter.Body =
+            Matter.Bodies.rectangle(375, 300 + (160+config.pipe.gap/2) * (flipped ? -1 : 1), 52, 320, {isStatic:true,angle:flipped ? Math.PI : 0});// WTF is this ungliness?
         Matter.World.add(this.engine.world, result);
         this.pipes.push(result);
         return result;
@@ -238,11 +247,15 @@ class FlappyPhysics {
                 this.gameState = GameState.StartGame;
                 this.pipeCounter = config.pipe.delay;
                 this.score = 0;
+                this.cooldown = 20;
                 for(let listener of listeners) {
                     listener.onReset();
                 }
                 break;
             case GameState.StartGame:
+                for(let listener of listeners) {
+                    listener.onGameStart();
+                }
                 this.gameState = GameState.InProgress;
             case GameState.InProgress:
                 Matter.Body.setVelocity(this.player, {x:0, y:-config.force});
@@ -273,6 +286,7 @@ class FlappyGraphics implements FlappyListener {
     private leaderboardButtonGlow:PIXI.Sprite;
     private restartButton:PIXI.Sprite;
     private shareButton:PIXI.Sprite;
+    private titleSprite:PIXI.Sprite;
     private touch:PIXI.Graphics;
     
     constructor(physics:FlappyPhysics, canvas?:HTMLCanvasElement) {
@@ -294,11 +308,9 @@ class FlappyGraphics implements FlappyListener {
             '/images/add-to-leaderboard-glow.png',
             '/images/restart.png',
             '/images/share.png',
+            '/images/title.png',
             '/fonts/score.xml'
         ])
-        .on('progress', (loader, resource) => {
-            console.info('Loaded resource ' + resource.name);
-        })
         .on('complete', (loader, resource) => {
             window.onresize = () => {
                 let fullscreen:boolean = false;
@@ -306,24 +318,38 @@ class FlappyGraphics implements FlappyListener {
                 if(!fullscreen) {
                     let w:number = this.application.view.clientWidth;
                     let h:number = this.application.view.clientHeight;
-    
                     let ratio:number = w / h;  
-                    if(ratio > 0.65 || ratio < 0.48) {
+
+                    if(ratio > 0.683 || ratio < 0.48) {
                         let scale:number = w * (600 / h);
                         this.application.stage.x = scale / 2 - 144;
                         this.application.stage.y = 0;
-                        this.application.renderer.resize(
-                            scale, 600
-                        );
+                        this.application.renderer.resize(scale, 600);
                     }
                     else
                     {
                         let scale:number = h * (288 / w);
                         this.application.stage.x = 0;
                         this.application.stage.y = scale / 2 - 300;
-                        this.application.renderer.resize(
-                            288, scale
-                        );
+                        this.application.renderer.resize(288, scale);
+                    }
+
+                    console.debug("Ratio: " + ratio);
+
+                    if(ratio < 0.54) {
+                        this.titleSprite.position.y = this.bitmapText.position.y = 75;
+                    }
+                    else if(ratio < 0.57) {
+                        this.titleSprite.position.y = this.bitmapText.position.y = 100;
+                    }
+                    else if(ratio < 0.65) {
+                        this.titleSprite.position.y = this.bitmapText.position.y = 125;
+                    }
+                    else if(ratio < 0.683) {
+                        this.titleSprite.position.y = this.bitmapText.position.y = 150;
+                    }
+                    else {
+                        this.titleSprite.position.y = this.bitmapText.position.y = 100;
                     }
                 }
             };
@@ -336,6 +362,12 @@ class FlappyGraphics implements FlappyListener {
             ]);
 
             this.animation.play();
+
+            this.titleSprite = new PIXI.Sprite(PIXI.loader.resources['/images/title.png'].texture);
+            this.titleSprite.position.x = 144;
+            this.titleSprite.position.y = 150;
+            this.titleSprite.anchor.x = 0.5;
+            this.titleSprite.anchor.y = 0.5;
 
             this.scoreSprite = new PIXI.Sprite(PIXI.loader.resources['/images/score.png'].texture);
             this.scoreSprite.anchor.x = 0.5;
@@ -453,13 +485,14 @@ class FlappyGraphics implements FlappyListener {
 
             this.bitmapText = new PIXI.extras.BitmapText("0", { font: '36px Score' });
             this.bitmapText.position.x = 144;
-            this.bitmapText.position.y = 100;
+            this.bitmapText.position.y = 150;
+            this.bitmapText.visible = false;
             (<any>this.bitmapText).anchor.x = 0.5;
             (<any>this.bitmapText).anchor.y = 0.5;
 
             this.floorSprites = [];
             let floorTexture:PIXI.Texture = PIXI.loader.resources['/images/floor.png'].texture;
-            for(let i:number = 0; i < 5; i ++) {
+            for(let i:number = 0; i < 2; i ++) {
                 let section:PIXI.Sprite = new PIXI.Sprite(floorTexture);
                 section.position.y = 600 - floorTexture.height;
                 this.floorContainer.addChild(section);
@@ -474,6 +507,7 @@ class FlappyGraphics implements FlappyListener {
             this.application.stage.addChild(this.bitmapText);
             this.application.stage.addChild(this.touch);
             this.application.stage.addChild(this.scoreSprite);
+            this.application.stage.addChild(this.titleSprite);
             this.application.stage.addChild(this.mask);
             if(!canvas) {
                 document.body.appendChild(this.application.view);
@@ -505,36 +539,51 @@ class FlappyGraphics implements FlappyListener {
                 sprite.anchor.y = 0.5;
                 this.pipeContainer.addChild(sprite);
             }
+            else {
+                sprite.visible = true;
+            }
             sprite.position.x = pipeOrientations[i].x;
             sprite.position.y = pipeOrientations[i].y;
             sprite.rotation = pipeOrientations[i].r;
         }
-
-        this.leaderboardButtonGlow.alpha = (Math.sin(new Date().getTime() / 500) + 1) / 2;
-
+        for(let i = pipeOrientations.length; i < this.pipeSprites.length; i++)
+        {
+            this.pipeSprites[i].visible = false;
+        }
+        this.leaderboardButtonGlow.alpha = (-Math.cos(elapsed() / 500) + 1) / 2;
+        // this.titleSprite.position.y = Math.min(-200 + elapsed() / 2.5, 0);
+        // this.titleSprite.alpha = Math.min(elapsed() / 750, 100);
         window.requestAnimationFrame(time => {
             this.display(physics);
         });
     }
 
     public onReset():void {
-        this.bitmapText.visible = true;
         while(this.pipeSprites.length > 0) {
             let pipeSprite:PIXI.Sprite = this.pipeSprites.pop();
             this.application.stage.removeChild(pipeSprite);
             pipeSprite.destroy();
         }
-        this.bitmapText.text = '0';
         this.scoreSprite.visible = false;
+        this.titleSprite.visible = true;
         this.animation.play();
+        relativeTime = new Date();
+    }
+
+    public onGameStart():void {
+        this.bitmapText.text = '0';
+        this.bitmapText.visible = true;
+        this.titleSprite.visible = false;
     }
 
     public onDie(score:number, highScore:number):void {
+        this.leaderboardButtonGlow.alpha = 0;
         this.bitmapText.visible = false;
+        this.scoreSprite.visible = true;
         this.scoreText.text = '' + score;
         this.highScoreText.text = '' + highScore;
-        this.scoreSprite.visible = true;
         this.animation.stop();
+        relativeTime = new Date();
     }
 
     public onScore(score:number):void {
@@ -542,4 +591,4 @@ class FlappyGraphics implements FlappyListener {
     }
 }
 
-new FlappyGraphics(new FlappyPhysics());
+var f:FlappyGraphics = new FlappyGraphics(new FlappyPhysics());
