@@ -5,7 +5,7 @@ var concat = require('gulp-concat');
 var sass = require('gulp-sass');
 
 gulp.task('compile', function() {
-    gulp.src('ts/**/*.ts').pipe(typescript()).pipe(gulp.dest('ts'))
+    return gulp.src('ts/**/*.ts').pipe(typescript()).pipe(gulp.dest('ts'))
 });
 
 gulp.task('copy', ['copy-js', 'copy-css']);
