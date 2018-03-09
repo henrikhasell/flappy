@@ -37,7 +37,13 @@ namespace Flappy.Controllers
             if(ModelState.IsValid)
             {
                 score.Time = DateTime.Now;
-                score.Address = HttpContext.Connection.RemoteIpAddress.ToString();
+
+                score.Address = HttpContext.Request.Headers["X-Forwarded-For"];
+
+                if(score.Address == null)
+                {
+                    score.Address = HttpContext.Connection.RemoteIpAddress.ToString();
+                }
 
                 await database.Scores.AddAsync(score);
                 await database.SaveChangesAsync();
