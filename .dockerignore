@@ -1,3 +1,7 @@
+/.git
+/.dockerignore
+/.gitignore
+/Dockerfile
 /bin
 /obj
 /node_modules
@@ -7,4 +11,4 @@
 /Migrations
 /Flappy.sqlite3
 package-lock.json 
-yarn.lock 
+yarn.lock
