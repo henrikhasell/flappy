@@ -1,11 +1,25 @@
-﻿<!DOCTYPE html>
+﻿@using Flappy.Settings
+@using Microsoft.Extensions.Options
+@inject IOptions<GoogleAnalyticsSettings> googleAnalyticsSettings
+@inject IOptions<OpenGraphSettings> openGraphSettings
+<!DOCTYPE html>
 <html>
     <head>
+        <meta property="fb:app_id" content="@openGraphSettings.Value.FacebookAppId"/>
         <meta charset="utf-8"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
+        <meta name="viewport" content="minimal-ui, width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="mobile-web-app-capable" content="yes">
         <title>@ViewData["Title"]</title>
         <link rel="stylesheet" href="~/bootstrap.min.css">
         <link rel="stylesheet" href="~/style.css">
+        <script async src="https://www.googletagmanager.com/gtag/js?id=@googleAnalyticsSettings.Value.TrackingId"></script>
+        <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', '@googleAnalyticsSettings.Value.TrackingId');
+        </script>
     </head>
     <body>
         <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
@@ -15,15 +29,9 @@
             </button>
             <div class="collapse navbar-collapse" id="aaa">
                 <ul class="navbar-nav mr-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link"asp-controller="Home" asp-action="Leaderboard">Leaderboard</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link"asp-controller="Home" asp-action="About">About</a>
-                    </li>
+                    <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Index">Home</a></li>
+                    <li class="nav-item"><a class="nav-link"asp-controller="Home" asp-action="Leaderboard">Leaderboard</a></li>
+                    <li class="nav-item"><a class="nav-link"asp-controller="Home" asp-action="About">About</a></li>
                 </ul>
             </div>
         </nav>

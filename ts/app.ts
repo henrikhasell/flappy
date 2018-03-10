@@ -18,7 +18,7 @@ interface Sounds {
 var config:Configuration = {
     force:6.4,
 	speed: 2.4,
-	variance: 225,
+	variance: 210,
     pipe: { delay:100, gap:88 }
 };
 
@@ -93,7 +93,6 @@ class FlappyPhysics {
                 case GameState.InProgress:
                     if(--this.pipeCounter <= 0) {
 						let height: number = (Math.random() * config.variance - config.variance / 2) + 300;
-						console.debug("Height: " + height);
                         for(let flipped of [true, false]) {
                             this.createPipe(height, flipped);
                         }
@@ -203,8 +202,9 @@ class FlappyPhysics {
     }
 
     public createPipe(height:number, flipped:boolean):Matter.Body {
+        let offset:number = (450/2 + config.pipe.gap/2) * (flipped ? -1 : 1);
         let result:Matter.Body =
-            Matter.Bodies.rectangle(375, height + (160+config.pipe.gap/2) * (flipped ? -1 : 1), 52, 320, {isStatic:true,angle:flipped ? Math.PI : 0});// WTF is this ungliness?
+            Matter.Bodies.rectangle(375, height + offset, 52, 450, {isStatic:true,angle:flipped ? Math.PI : 0});// WTF is this ungliness?
         Matter.World.add(this.engine.world, result);
         this.pipes.push(result);
         return result;
@@ -316,43 +316,42 @@ class FlappyGraphics implements FlappyListener {
             '/fonts/score.xml'
         ])
         .on('complete', (loader, resource) => {
+            this.application.view.onpointerdown = () => {
+                screenfull.request();
+            };
             window.onresize = () => {
-                let fullscreen:boolean = false;
+                let w:number = this.application.view.clientWidth;
+                let h:number = this.application.view.clientHeight;
+                let ratio:number = w / h;  
 
-                if(!fullscreen) {
-                    let w:number = this.application.view.clientWidth;
-                    let h:number = this.application.view.clientHeight;
-                    let ratio:number = w / h;  
+                if(ratio > 0.683 || ratio < 0.48) {
+                    let scale:number = w * (600 / h);
+                    this.application.stage.x = scale / 2 - 144;
+                    this.application.stage.y = 0;
+                    this.application.renderer.resize(scale, 600);
+                }
+                else
+                {
+                    let scale:number = h * (288 / w);
+                    this.application.stage.x = 0;
+                    this.application.stage.y = scale / 2 - 300;
+                    this.application.renderer.resize(288, scale);
+                }
 
-                    if(ratio > 0.683 || ratio < 0.48) {
-                        let scale:number = w * (600 / h);
-                        this.application.stage.x = scale / 2 - 144;
-                        this.application.stage.y = 0;
-                        this.application.renderer.resize(scale, 600);
-                    }
-                    else
-                    {
-                        let scale:number = h * (288 / w);
-                        this.application.stage.x = 0;
-                        this.application.stage.y = scale / 2 - 300;
-                        this.application.renderer.resize(288, scale);
-                    }
-
-                    if(ratio < 0.54) {
-                        this.titleSprite.position.y = this.bitmapText.position.y = 75;
-                    }
-                    else if(ratio < 0.57) {
-                        this.titleSprite.position.y = this.bitmapText.position.y = 100;
-                    }
-                    else if(ratio < 0.65) {
-                        this.titleSprite.position.y = this.bitmapText.position.y = 125;
-                    }
-                    else if(ratio < 0.683) {
-                        this.titleSprite.position.y = this.bitmapText.position.y = 150;
-                    }
-                    else {
-                        this.titleSprite.position.y = this.bitmapText.position.y = 100;
-                    }
+                if(ratio < 0.54) {
+                    this.titleSprite.position.y = this.bitmapText.position.y = 75;
+                }
+                else if(ratio < 0.57) {
+                    this.titleSprite.position.y = this.bitmapText.position.y = 100;
+                }
+                else if(ratio < 0.65) {
+                    this.titleSprite.position.y = this.bitmapText.position.y = 125;
+                }
+                else if(ratio < 0.683) {
+                    this.titleSprite.position.y = this.bitmapText.position.y = 150;
+                }
+                else {
+                    this.titleSprite.position.y = this.bitmapText.position.y = 100;
                 }
             };
 
@@ -411,12 +410,6 @@ class FlappyGraphics implements FlappyListener {
             this.shareButton.position.x = -50;
             this.shareButton.position.y = 135;
 
-            this.shareButton.interactive = true;
-            this.shareButton.buttonMode = true;
-            this.shareButton.on('pointerup', () => {
-                window.location.href = 'Home/Share';
-            });
-
             this.leaderboardButton.interactive = true;
             this.leaderboardButton.buttonMode = true;
             this.leaderboardButton.on('pointerup', () => {
@@ -424,15 +417,18 @@ class FlappyGraphics implements FlappyListener {
                 scoreInput.setAttribute('type', 'hidden');
                 scoreInput.setAttribute('name', 'value');
                 scoreInput.setAttribute('value', '' + physics.getScore());
+
                 let validInput:HTMLInputElement = document.createElement("input");
                 validInput.setAttribute('type', 'hidden');
                 validInput.setAttribute('name', 'validate');
                 validInput.setAttribute('value', 'false');
+
                 let form:HTMLFormElement = document.createElement("form");
                 form.method = "post";
                 form.action = "Home/Leaderboard";
                 form.appendChild(scoreInput);
                 form.appendChild(validInput);
+                
                 document.body.appendChild(form);
                 form.submit();
             });
@@ -440,7 +436,10 @@ class FlappyGraphics implements FlappyListener {
             this.shareButton.interactive = true;
             this.shareButton.buttonMode = true;
             this.shareButton.on('pointerup', () => {
-                window.location.href = 'Home/Share';
+                FB.ui({
+                    method: 'share',
+                    href: window.location.href,
+                }, function(response){});
             });
             
             this.restartButton.interactive = true;
@@ -457,17 +456,7 @@ class FlappyGraphics implements FlappyListener {
             this.touch.on('pointerdown', () => {
                 physics.flap();
             });
-            /*
-            this.application.view.onpointerdown = () => {
-                let func = (<any>this.application.view).requestFullscreen
-                || (<any>this.application.view).webkitRequestFullScreen
-                || (<any>this.application.view).mozRequestFullScreen
-                || (<any>this.application.view).msRequestFullscreen;
-                if(func) {
-                    func.call(this.application.view);
-                }
-            }
-            */
+
             this.scoreSprite.addChild(this.scoreText);
             this.scoreSprite.addChild(this.highScoreText);
             this.scoreSprite.addChild(this.leaderboardButtonGlow);
@@ -592,5 +581,18 @@ class FlappyGraphics implements FlappyListener {
         this.bitmapText.text = '' + score;
     }
 }
+
+window.fbAsyncInit = function() {
+    FB.init({ appId: '282422095623841', version: 'v2.12' });
+};
+
+(function(d, s, id){
+    var j, c = d.getElementsByTagName(s)[0];
+    if (!d.getElementById(id)) {
+        j = d.createElement(s); j.id = id;
+        j.src = "https://connect.facebook.net/en_GB/sdk.js";
+        c.parentNode.insertBefore(j, c);
+    }
+  }(document, 'script', 'facebook-jssdk'));
 
 var f:FlappyGraphics = new FlappyGraphics(new FlappyPhysics());

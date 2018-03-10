@@ -5,13 +5,16 @@
     "jquery": "^3.3.1",
     "matter-js": "^0.14.1",
     "pixi.js": "^4.7.0",
-    "popper.js": "^1.12.9"
+    "popper.js": "^1.12.9",
+    "screenfull": "^3.3.2"
   },
   "devDependencies": {
+    "@types/fb": "latest",
     "@types/howler": "latest",
     "@types/jquery": "latest",
     "@types/matter-js": "latest",
     "@types/pixi.js": "latest",
+    "@types/screenfull": "latest",
     "gulp": "latest",
     "gulp-concat": "latest",
     "gulp-sass": "latest",

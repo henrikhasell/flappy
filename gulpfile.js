@@ -17,7 +17,8 @@ gulp.task('copy-js', function() {
         'node_modules/jquery/dist/jquery.min.js',
         'node_modules/howler/dist/howler.min.js',
         'node_modules/matter-js/build/matter.min.js',
-        'node_modules/pixi.js/dist/pixi.min.js'
+        'node_modules/pixi.js/dist/pixi.min.js',
+        'node_modules/screenfull/dist/screenfull.js'
     ]).pipe(gulp.dest('wwwroot'));
 });
 
