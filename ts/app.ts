@@ -316,8 +316,8 @@ class FlappyGraphics implements FlappyListener {
             '/fonts/score.xml'
         ])
         .on('complete', (loader, resource) => {
-            this.application.view.onpointerdown = () => {
-                screenfull.request();
+            this.application.view.onpointerup = () => {
+                screenfull.request(this.application.view);
             };
             window.onresize = () => {
                 let w:number = this.application.view.clientWidth;
