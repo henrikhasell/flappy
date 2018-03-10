@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Flappy.Settings;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -17,6 +18,12 @@ namespace Flappy
 
         public void ConfigureServices(IServiceCollection services)
         {
+            services.Configure<GoogleAnalyticsSettings>(options => {
+                options.TrackingId = "UA-115467440-1";
+            });
+            services.Configure<OpenGraphSettings>(options => {
+                options.FacebookAppId = "282422095623841";
+            });
             services.AddMvc();
             services.AddDbContext<DatabaseContext>(options =>
                 options.UseSqlite("Data Source=Flappy.sqlite3"));
