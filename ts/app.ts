@@ -33,9 +33,9 @@ interface FlappyListener {
 }
 
 var config:Configuration = {
-    force:6.4,
+    force: 6.4,
 	speed: 2.4,
-	variance: 210,
+	variance: 200,
     pipe: { delay:100, gap:88 }
 };
 
@@ -66,6 +66,7 @@ class FlappyPhysics {
     private runner:Matter.Runner;
     private player:Matter.Body;
     private floor:Matter.Body;
+    private ceiling:Matter.Body;
     private sensor:Matter.Body;
     private pipes:Matter.Body[];
     private pipeSensors:Matter.Body[];
@@ -80,6 +81,7 @@ class FlappyPhysics {
         this.runner = Matter.Runner.create({delta:1000/60});
         this.player = Matter.Bodies.circle(50, 0, 10, {friction:1,restitution:0.9});
         this.floor = Matter.Bodies.rectangle(400, 544, 800, 112, {isStatic:true});
+        this.ceiling = Matter.Bodies.rectangle(400, -100, 800, 10, {isStatic:true});
         this.sensor = Matter.Bodies.rectangle(-200, 300, 10, 600, {isSensor:true});
         this.pipes = [];
         this.pipeSensors = [];
@@ -92,7 +94,7 @@ class FlappyPhysics {
         this.highScore = 0;
         this.gameState = GameState.StartGame;
 
-        Matter.World.add(this.engine.world, [this.player, this.floor, this.sensor]);
+        Matter.World.add(this.engine.world, [this.player, this.floor, this.ceiling, this.sensor]);
         Matter.Events.on(this.engine, 'tick', event => {
             let worldVelocity:Matter.Vector = { x: -config.speed, y: 0 };
             switch(this.gameState) {

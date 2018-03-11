@@ -61,10 +61,5 @@ namespace Flappy.Controllers
         {
             return View();
         }
-
-        public IActionResult Share()
-        {
-            return View();
-        }
     }
 }
