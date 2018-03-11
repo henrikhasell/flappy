@@ -317,7 +317,9 @@ class FlappyGraphics implements FlappyListener {
         ])
         .on('complete', (loader, resource) => {
             this.application.view.onpointerup = () => {
-                screenfull.request(this.application.view);
+                if(screenfull.enabled && !screenfull.isFullscreen) {
+                    screenfull.request(this.application.view);
+                }
             };
             window.onresize = () => {
                 let w:number = this.application.view.clientWidth;
