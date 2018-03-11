@@ -1,3 +1,9 @@
+declare var screenfull:{
+    isFullscreen:boolean,
+    enabled:boolean
+    request(HTMLElement):void
+};
+
 const enum GameState {
     InProgress, StartGame, GameOver
 }
@@ -13,6 +19,17 @@ interface Sounds {
     point:Howl; 
     hit:Howl;
     wing:Howl;
+}
+
+const enum FlappyEvent {
+    StartGame, Die
+}
+
+interface FlappyListener {
+    onReset:() => void;
+    onGameStart:() => void;
+    onDie:(score:number, highScore:number) => void;
+    onScore:(score:number) => void;
 }
 
 var config:Configuration = {
@@ -34,20 +51,11 @@ var sounds:Sounds = {
     })
 };
 
-const enum FlappyEvent {
-    StartGame, Die
-}
-
-interface FlappyListener {
-    onReset:() => void;
-    onGameStart:() => void;
-    onDie:(score:number, highScore:number) => void;
-    onScore:(score:number) => void;
-}
-
 var listeners:FlappyListener[] = [];
 
 var relativeTime:Date = new Date();
+
+var cooldown:number = 0;
 
 function elapsed():number {
     return new Date().getTime() - relativeTime.getTime();
@@ -65,7 +73,6 @@ class FlappyPhysics {
     private pipeCounter:number;
     private score:number;
     private highScore:number;
-    private cooldown:number;
     private gameState:GameState;
 
     constructor() {
@@ -83,7 +90,6 @@ class FlappyPhysics {
         this.pipeCounter = 0;
         this.score = 0;
         this.highScore = 0;
-        this.cooldown = 0;
         this.gameState = GameState.StartGame;
 
         Matter.World.add(this.engine.world, [this.player, this.floor, this.sensor]);
@@ -141,7 +147,7 @@ class FlappyPhysics {
 
             Matter.Body.setVelocity(this.floor, worldVelocity);
             Matter.Body.setPosition(this.sensor, {x:-100,y:300});
-            this.cooldown--;
+            cooldown--;
         });
         window.onkeydown = event => {
             if(event.key == ' ' && !event.repeat) {
@@ -177,7 +183,7 @@ class FlappyPhysics {
                                 }
                                 if(!handled) {
                                     this.gameState = GameState.GameOver;         
-                                    this.cooldown = 20;
+                                    cooldown = 20;
                                     for(let listener of listeners) {
                                         listener.onDie(this.score, this.highScore);
                                     }
@@ -238,7 +244,7 @@ class FlappyPhysics {
     }
 
     public flap():void {
-        if(this.cooldown > 0)
+        if(cooldown > 0)
             return;
         switch(this.gameState) {
             case GameState.GameOver:
@@ -251,7 +257,7 @@ class FlappyPhysics {
                 this.gameState = GameState.StartGame;
                 this.pipeCounter = config.pipe.delay;
                 this.score = 0;
-                this.cooldown = 20;
+                cooldown = 20;
                 for(let listener of listeners) {
                     listener.onReset();
                 }
@@ -415,6 +421,8 @@ class FlappyGraphics implements FlappyListener {
             this.leaderboardButton.interactive = true;
             this.leaderboardButton.buttonMode = true;
             this.leaderboardButton.on('pointerup', () => {
+                if(cooldown > 0)
+                    return;
                 let scoreInput:HTMLInputElement = document.createElement("input");
                 scoreInput.setAttribute('type', 'hidden');
                 scoreInput.setAttribute('name', 'value');
@@ -438,6 +446,8 @@ class FlappyGraphics implements FlappyListener {
             this.shareButton.interactive = true;
             this.shareButton.buttonMode = true;
             this.shareButton.on('pointerup', () => {
+                if(cooldown > 0)
+                    return;
                 FB.ui({
                     method: 'share',
                     href: window.location.href,
@@ -543,9 +553,12 @@ class FlappyGraphics implements FlappyListener {
         {
             this.pipeSprites[i].visible = false;
         }
-        this.leaderboardButtonGlow.alpha = (-Math.cos(elapsed() / 500) + 1) / 2;
-        // this.titleSprite.position.y = Math.min(-200 + elapsed() / 2.5, 0);
-        // this.titleSprite.alpha = Math.min(elapsed() / 750, 100);
+
+        let delta:number = elapsed();
+        this.leaderboardButtonGlow.alpha = (-Math.cos(delta / 500) + 1) / 2;
+        this.scoreSprite.position.y = Math.min(delta / 2, 240);
+        this.scoreSprite.alpha = Math.min(delta / 500, 1);
+
         window.requestAnimationFrame(time => {
             this.display(physics);
         });
@@ -572,10 +585,13 @@ class FlappyGraphics implements FlappyListener {
     public onDie(score:number, highScore:number):void {
         this.leaderboardButtonGlow.alpha = 0;
         this.bitmapText.visible = false;
+        this.scoreSprite.alpha = 0;
+        this.scoreSprite.position.y = 0;
         this.scoreSprite.visible = true;
         this.scoreText.text = '' + score;
         this.highScoreText.text = '' + highScore;
         this.animation.stop();
+        cooldown = 20;
         relativeTime = new Date();
     }
 
