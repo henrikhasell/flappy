@@ -558,8 +558,8 @@ class FlappyGraphics implements FlappyListener {
 
         let delta:number = elapsed();
         this.leaderboardButtonGlow.alpha = (-Math.cos(delta / 500) + 1) / 2;
-        this.scoreSprite.position.y = Math.min(delta / 2, 240);
-        this.scoreSprite.alpha = Math.min(delta / 500, 1);
+        this.scoreSprite.position.y = Math.min(delta, 240);
+        this.scoreSprite.alpha = Math.min(delta / 250, 1);
 
         window.requestAnimationFrame(time => {
             this.display(physics);
@@ -585,6 +585,11 @@ class FlappyGraphics implements FlappyListener {
     }
 
     public onDie(score:number, highScore:number):void {
+        let xmlHttpRequest:XMLHttpRequest = new XMLHttpRequest();
+        xmlHttpRequest.open('POST', 'Home/SubmitGame', true);
+        xmlHttpRequest.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+        xmlHttpRequest.send('score=' + score);
+
         this.leaderboardButtonGlow.alpha = 0;
         this.bitmapText.visible = false;
         this.scoreSprite.alpha = 0;

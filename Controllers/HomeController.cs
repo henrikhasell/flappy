@@ -61,5 +61,27 @@ namespace Flappy.Controllers
         {
             return View();
         }
+
+        [HttpPost]
+        public async Task<IActionResult> SubmitGame([Bind("Score")]Game game)
+        {
+            if(!ModelState.IsValid)
+            {
+                return BadRequest();
+            }
+            
+            game.Time = DateTime.Now;
+            game.Address = HttpContext.Request.Headers["X-Forwarded-For"];
+
+            if(game.Address == null)
+            {
+                game.Address = HttpContext.Connection.RemoteIpAddress.ToString();
+            }
+
+            await database.Games.AddAsync(game);
+            await database.SaveChangesAsync();
+
+            return Ok();
+        }
     }
 }

@@ -11,6 +11,8 @@ namespace Flappy
         {
         }
 
+        public DbSet<Game> Games { set; get; }
+
         public DbSet<Score> Scores { set; get; }
     }
 }
