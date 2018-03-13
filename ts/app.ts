@@ -104,7 +104,7 @@ class FlappyPhysics {
                         for(let flipped of [true, false]) {
                             this.createPipe(height, flipped);
                         }
-                        let pipeSensor:Matter.Body = Matter.Bodies.rectangle(375, 300, 5, 600, { isStatic:true, isSensor: true });
+                        let pipeSensor:Matter.Body = Matter.Bodies.rectangle(350, 300, 5, 600, { isStatic:true, isSensor: true });
                         Matter.World.add(this.engine.world, pipeSensor);
                         this.pipeSensors.push(pipeSensor);
                         this.pipeCounter = config.pipe.delay;
@@ -115,7 +115,7 @@ class FlappyPhysics {
                     }
                     break;
                 case GameState.StartGame:
-                    Matter.Body.setPosition(this.player, { x: 50, y: 275 + Math.sin(elapsed() / 250) * 15});
+                    Matter.Body.setPosition(this.player, { x: 50, y: 275 + Math.sin(elapsed() / 250) * 15 });
                     Matter.Body.setVelocity(this.player, { x: 0, y: 0 });
                     Matter.Body.setAngle(this.player, 0);
                     Matter.Body.setAngularVelocity(this.player, 0);
@@ -212,7 +212,7 @@ class FlappyPhysics {
     public createPipe(height:number, flipped:boolean):Matter.Body {
         let offset:number = (450/2 + config.pipe.gap/2) * (flipped ? -1 : 1);
         let result:Matter.Body =
-            Matter.Bodies.rectangle(375, height + offset, 52, 450, {isStatic:true,angle:flipped ? Math.PI : 0});// WTF is this ungliness?
+            Matter.Bodies.rectangle(350, height + offset, 52, 450, {isStatic:true,angle:flipped ? Math.PI : 0});// WTF is this ungliness?
         Matter.World.add(this.engine.world, result);
         this.pipes.push(result);
         return result;
@@ -257,7 +257,7 @@ class FlappyPhysics {
                     Matter.World.remove(this.engine.world, this.pipeSensors.pop());
                 }
                 this.gameState = GameState.StartGame;
-                this.pipeCounter = config.pipe.delay;
+                this.pipeCounter = 0;
                 this.score = 0;
                 cooldown = 20;
                 for(let listener of listeners) {
