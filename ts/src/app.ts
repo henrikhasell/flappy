@@ -1,5 +1,6 @@
 /// <reference path="../d/fb.d.ts"/>
 /// <reference path="../d/screenfull.d.ts"/>
+
 const enum GameState {
     InProgress, StartGame, GameOver
 }
@@ -11,8 +12,7 @@ interface Configuration {
     pipe: { delay:number, gap:number };
 }
 
-function flappy()
-{
+function flappy() {
     interface Sounds {
         point:Howl; 
         hit:Howl;

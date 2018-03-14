@@ -29,7 +29,7 @@ gulp.task('copy-css', function() {
 });
 
 gulp.task('compress', ['compile'], function () {
-    return gulp.src('./ts/src/**/*.js')
+    return gulp.src('./ts/**/*.js')
         .pipe(uglify())
         .pipe(concat('flappy.min.js'))
         .pipe(gulp.dest('./wwwroot/'));
