@@ -1,8 +1,31 @@
+interface Window{
+    fbAsyncInit() : any;
+}
+
 declare var screenfull:{
     isFullscreen:boolean,
     enabled:boolean
     request(HTMLElement):void
 };
+
+interface FBInitParams {
+    appId?:string;
+    version?:string;
+    quote?:string;
+}
+
+interface FBShareParams {
+    method?:string;
+    href?:string;
+    quote?:string;
+}
+
+interface FBSDK {
+    init(fbInitObject:FBInitParams):void;
+    ui(fbShareObject:FBShareParams, callback:(any) => any):void;
+}
+
+declare var FB:FBSDK;
 
 const enum GameState {
     InProgress, StartGame, GameOver
@@ -61,252 +84,205 @@ function elapsed():number {
     return new Date().getTime() - relativeTime.getTime();
 }
 
-class FlappyPhysics {
-    private engine:Matter.Engine;
-    private runner:Matter.Runner;
-    private player:Matter.Body;
-    private floor:Matter.Body;
-    private ceiling:Matter.Body;
-    private sensor:Matter.Body;
-    private pipes:Matter.Body[];
-    private pipeSensors:Matter.Body[];
-    private floorOffsets:number[];
-    private pipeCounter:number;
-    private score:number;
-    private highScore:number;
-    private gameState:GameState;
 
-    constructor() {
-        this.engine = Matter.Engine.create();
-        this.runner = Matter.Runner.create({delta:1000/60});
-        this.player = Matter.Bodies.circle(50, 0, 10, {friction:1,restitution:0.9});
-        this.floor = Matter.Bodies.rectangle(400, 544, 800, 112, {isStatic:true});
-        this.ceiling = Matter.Bodies.rectangle(400, -100, 800, 10, {isStatic:true});
-        this.sensor = Matter.Bodies.rectangle(-200, 300, 10, 600, {isSensor:true});
-        this.pipes = [];
-        this.pipeSensors = [];
-        this.floorOffsets = [];
-        for(let i = 0; i < 2; i++) {
-            this.floorOffsets.push(i * 336);
-        }
-        this.pipeCounter = 0;
-        this.score = 0;
-        this.highScore = 0;
-        this.gameState = GameState.StartGame;
+let matterEngine:Matter.Engine = Matter.Engine.create();
+let matterRunner:Matter.Runner = Matter.Runner.create({delta:1000/60});
+let playerBody:Matter.Body = Matter.Bodies.circle(50, 0, 10, {friction:1, restitution:0.9});
+let floorBody:Matter.Body = Matter.Bodies.rectangle(400, 544, 800, 112, {isStatic:true});
+let offscreenCeling:Matter.Body = Matter.Bodies.rectangle(400, -100, 800, 10, {isStatic:true});
+let offscreenSensor:Matter.Body = Matter.Bodies.rectangle(-200, 300, 10, 600, {isSensor:true});
+let pipeBodies:Matter.Body[] = [];
+let pipeSensors:Matter.Body[] = [];
+let floorOffsets:number[] = [0, 336];
+let pipeCounter:number = 0;
+let highScore:number = 0;
+let score:number = 0;
+let gameState:GameState = GameState.StartGame;;
 
-        Matter.World.add(this.engine.world, [this.player, this.floor, this.ceiling, this.sensor]);
-        Matter.Events.on(this.engine, 'tick', event => {
-            let worldVelocity:Matter.Vector = { x: -config.speed, y: 0 };
-            switch(this.gameState) {
-                case GameState.InProgress:
-                    if(--this.pipeCounter <= 0) {
-						let height: number = (Math.random() * config.variance - config.variance / 2) + 300;
-                        for(let flipped of [true, false]) {
-                            this.createPipe(height, flipped);
-                        }
-                        let pipeSensor:Matter.Body = Matter.Bodies.rectangle(350, 300, 5, 600, { isStatic:true, isSensor: true });
-                        Matter.World.add(this.engine.world, pipeSensor);
-                        this.pipeSensors.push(pipeSensor);
-                        this.pipeCounter = config.pipe.delay;
-                    }
-                    this.player.angle = -45 * Math.PI / 180;
-                    if(this.player.velocity.y > 0) {
-                        this.player.angle += Math.min(135 * Math.PI / 180, this.player.velocity.y * 0.3);
-                    }
-                    break;
-                case GameState.StartGame:
-                    Matter.Body.setPosition(this.player, { x: 50, y: 275 + Math.sin(elapsed() / 250) * 15 });
-                    Matter.Body.setVelocity(this.player, { x: 0, y: 0 });
-                    Matter.Body.setAngle(this.player, 0);
-                    Matter.Body.setAngularVelocity(this.player, 0);
-                    break;
-                case GameState.GameOver:
-                    worldVelocity = { x: 0, y: 0 };
-                    break;
-            }
+let application:PIXI.Application;
+let mask:PIXI.Graphics;
+let animation:PIXI.extras.AnimatedSprite;
+let bitmapText:PIXI.extras.BitmapText;
+let pipeContainer:PIXI.Container;
+let floorContainer:PIXI.Container;
+let background:PIXI.Sprite;
+let pipeSprites:PIXI.Sprite[];
+let floorSprites:PIXI.Sprite[];
+let scoreSprite:PIXI.Sprite;
+let scoreText:PIXI.extras.BitmapText;
+let highScoreText:PIXI.extras.BitmapText;
+let leaderboardButton:PIXI.Sprite;
+let leaderboardButtonGlow:PIXI.Sprite;
+let restartButton:PIXI.Sprite;
+let shareButton:PIXI.Sprite;
+let titleSprite:PIXI.Sprite;
+let touch:PIXI.Graphics;
 
-            for(let index in this.floorOffsets) {
-                this.floorOffsets[index] += worldVelocity.x;
-                if(this.floorOffsets[index] < -336) {
-                    this.floorOffsets[index] += this.floorOffsets.length * 336;
+Matter.World.add(matterEngine.world, [playerBody, floorBody, offscreenCeling, offscreenSensor]);
+Matter.Events.on(matterEngine, 'tick', event => {
+    let worldVelocity:Matter.Vector = { x: -config.speed, y: 0 };
+    switch(gameState) {
+        case GameState.InProgress:
+            if(--pipeCounter <= 0) {
+                let height: number = (Math.random() * config.variance - config.variance / 2) + 300;
+                for(let flipped of [true, false]) {
+                    createPipe(height, flipped);
                 }
+                let pipeSensor:Matter.Body = Matter.Bodies.rectangle(350, 300, 5, 600, { isStatic:true, isSensor: true });
+                Matter.World.add(matterEngine.world, pipeSensor);
+                pipeSensors.push(pipeSensor);
+                pipeCounter = config.pipe.delay;
             }
-
-            for(let i of this.pipes) {
-                Matter.Body.setPosition(i, {
-                    x:i.position.x+worldVelocity.x,
-                    y:i.position.y+worldVelocity.y
-                }); // <= Move pipes forward.
-                Matter.Body.setVelocity(i, worldVelocity);
+            playerBody.angle = -45 * Math.PI / 180;
+            if(playerBody.velocity.y > 0) {
+                playerBody.angle += Math.min(135 * Math.PI / 180, playerBody.velocity.y * 0.3);
             }
-
-            for(let i of this.pipeSensors) {
-                Matter.Body.setPosition(i, {
-                    x:i.position.x+worldVelocity.x,
-                    y:300
-                }); // <= Move sensors forward.
-            }
-
-            Matter.Body.setVelocity(this.floor, worldVelocity);
-            Matter.Body.setPosition(this.sensor, {x:-100,y:300});
-            cooldown--;
-        });
-        window.onkeydown = event => {
-            if(event.key == ' ' && !event.repeat) {
-                this.flap();
-            }
-        };
-        Matter.Events.on(this.engine, 'collisionStart', event => {
-            for(let pair of event.pairs) {
-                let tuples:Matter.Body[][] = [
-                    [pair.bodyA, pair.bodyB],
-                    [pair.bodyB, pair.bodyA]
-                ];
-                for(let tuple of tuples) {
-                    switch(tuple[0]) {
-                        case this.player:
-                            if(this.gameState == GameState.InProgress) {
-                                let handled:boolean = false;
-                                for(let i = 0; i < this.pipeSensors.length; i++) {
-                                    if(this.pipeSensors[i] == tuple[1]) {
-                                        Matter.World.remove(this.engine.world, this.pipeSensors[i])
-                                        this.pipeSensors.splice(i, 1);
-                                        sounds.point.play();
-                                        this.score++;
-                                        if(this.score >= this.highScore) {
-                                            this.highScore = this.score;
-                                        }
-                                        for(let listener of listeners) {
-                                            listener.onScore(this.score);
-                                        }
-                                        handled = true;
-                                        break;
-                                    }
-                                }
-                                if(!handled) {
-                                    this.gameState = GameState.GameOver;         
-                                    cooldown = 20;
-                                    for(let listener of listeners) {
-                                        listener.onDie(this.score, this.highScore);
-                                    }
-                                    sounds.hit.play();
-                                }
-                            }
-                            break;
-                        case this.sensor:
-                            for(let i = 0; i < this.pipes.length; i++) {
-                                if(this.pipes[i] == tuple[1]) {
-                                    Matter.World.remove(this.engine.world, this.pipes[i])
-                                    this.pipes.splice(i, 1);
-                                    break;
-                                }
-                            }
-                            break;
-                    }
-                }   
-            }
-        });
-        Matter.Runner.run(this.runner, this.engine);
+            break;
+        case GameState.StartGame:
+            Matter.Body.setPosition(playerBody, { x: 50, y: 275 + Math.sin(elapsed() / 250) * 15 });
+            Matter.Body.setVelocity(playerBody, { x: 0, y: 0 });
+            Matter.Body.setAngle(playerBody, 0);
+            Matter.Body.setAngularVelocity(playerBody, 0);
+            break;
+        case GameState.GameOver:
+            worldVelocity = { x: 0, y: 0 };
+            break;
     }
 
-    public createPipe(height:number, flipped:boolean):Matter.Body {
-        let offset:number = (450/2 + config.pipe.gap/2) * (flipped ? -1 : 1);
-        let result:Matter.Body =
-            Matter.Bodies.rectangle(350, height + offset, 52, 450, {isStatic:true,angle:flipped ? Math.PI : 0});// WTF is this ungliness?
-        Matter.World.add(this.engine.world, result);
-        this.pipes.push(result);
-        return result;
-    }
-
-    public getPlayerPosition():{x:number,y:number} {
-        return {
-            x: this.player.position.x,
-            y: this.player.position.y
-        };
-    }
-
-    public getPlayerRotation():number {
-        return this.player.angle;
-    }
-
-    public getFloorOffsets():number[] {
-        return this.floorOffsets.slice(0);
-    }
-
-    public getPipeOrientations():{x:number,y:number,r:number}[] {
-        let result:{x:number,y:number,r:number}[] = [];
-        for(let pipe of this.pipes) {
-            result.push({
-                x: pipe.position.x,
-                y: pipe.position.y,
-                r: pipe.angle
-            });
-        }
-        return result;
-    }
-
-    public flap():void {
-        if(cooldown > 0)
-            return;
-        switch(this.gameState) {
-            case GameState.GameOver:
-                while(this.pipes.length > 0) {
-                    Matter.World.remove(this.engine.world, this.pipes.pop());
-                }
-                while(this.pipeSensors.length > 0) {
-                    Matter.World.remove(this.engine.world, this.pipeSensors.pop());
-                }
-                this.gameState = GameState.StartGame;
-                this.pipeCounter = 0;
-                this.score = 0;
-                cooldown = 20;
-                for(let listener of listeners) {
-                    listener.onReset();
-                }
-                break;
-            case GameState.StartGame:
-                for(let listener of listeners) {
-                    listener.onGameStart();
-                }
-                this.gameState = GameState.InProgress;
-            case GameState.InProgress:
-                Matter.Body.setVelocity(this.player, {x:0, y:-config.force});
-                sounds.wing.play();
+    for(let index in floorOffsets) {
+        floorOffsets[index] += worldVelocity.x;
+        if(floorOffsets[index] < -336) {
+            floorOffsets[index] += floorOffsets.length * 336;
         }
     }
 
-    public getScore():number {
-        return this.score;
+    for(let i of pipeBodies) {
+        Matter.Body.setPosition(i, {
+            x:i.position.x+worldVelocity.x,
+            y:i.position.y+worldVelocity.y
+        }); // <= Move pipes forward.
+        Matter.Body.setVelocity(i, worldVelocity);
+    }
+
+    for(let i of pipeSensors) {
+        Matter.Body.setPosition(i, {
+            x:i.position.x+worldVelocity.x,
+            y:300
+        }); // <= Move sensors forward.
+    }
+
+    Matter.Body.setVelocity(floorBody, worldVelocity);
+    Matter.Body.setPosition(offscreenSensor, {x:-100,y:300});
+    cooldown--;
+});
+window.onkeydown = event => {
+    if(event.key == ' ' && !event.repeat) {
+        flap();
+    }
+};
+
+function flap():void {
+    if(cooldown > 0)
+        return;
+    switch(gameState) {
+        case GameState.GameOver:
+            while(pipeBodies.length > 0) {
+                Matter.World.remove(matterEngine.world, pipeBodies.pop());
+            }
+            while(pipeSensors.length > 0) {
+                Matter.World.remove(matterEngine.world, pipeSensors.pop());
+            }
+            gameState = GameState.StartGame;
+            pipeCounter = 0;
+            score = 0;
+            cooldown = 20;
+            for(let listener of listeners) {
+                listener.onReset();
+            }
+            break;
+        case GameState.StartGame:
+            for(let listener of listeners) {
+                listener.onGameStart();
+            }
+            gameState = GameState.InProgress;
+        case GameState.InProgress:
+            Matter.Body.setVelocity(playerBody, {x:0, y:-config.force});
+            sounds.wing.play();
     }
 }
 
-class FlappyGraphics implements FlappyListener {
+function createPipe(height:number, flipped:boolean):Matter.Body {
+    let offset:number = (450/2 + config.pipe.gap/2) * (flipped ? -1 : 1);
+    let result:Matter.Body =
+        Matter.Bodies.rectangle(350, height + offset, 52, 450, {
+            isStatic:true,
+            angle:flipped ? Math.PI : 0
+        });
+    Matter.World.add(matterEngine.world, result);
+    pipeBodies.push(result);
+    return result;
+}
 
-    private application:PIXI.Application;
-    private mask:PIXI.Graphics;
-    private animation:PIXI.extras.AnimatedSprite;
-    private bitmapText:PIXI.extras.BitmapText;
-    private pipeContainer:PIXI.Container;
-    private floorContainer:PIXI.Container;
-    private background:PIXI.Sprite;
-    private pipeSprites:PIXI.Sprite[];
-    private floorSprites:PIXI.Sprite[];
-    private scoreSprite:PIXI.Sprite;
-    private scoreText:PIXI.extras.BitmapText;
-    private highScoreText:PIXI.extras.BitmapText;
-    private leaderboardButton:PIXI.Sprite;
-    private leaderboardButtonGlow:PIXI.Sprite;
-    private restartButton:PIXI.Sprite;
-    private shareButton:PIXI.Sprite;
-    private titleSprite:PIXI.Sprite;
-    private touch:PIXI.Graphics;
+Matter.Events.on(matterEngine, 'collisionStart', event => {
+    for(let pair of event.pairs) {
+        let tuples:Matter.Body[][] = [
+            [pair.bodyA, pair.bodyB],
+            [pair.bodyB, pair.bodyA]
+        ];
+        for(let tuple of tuples) {
+            switch(tuple[0]) {
+                case playerBody:
+                    if(gameState == GameState.InProgress) {
+                        let handled:boolean = false;
+                        for(let i = 0; i < pipeSensors.length; i++) {
+                            if(pipeSensors[i] == tuple[1]) {
+                                Matter.World.remove(matterEngine.world, pipeSensors[i])
+                                pipeSensors.splice(i, 1);
+                                sounds.point.play();
+                                score++;
+                                if(score >= highScore) {
+                                    highScore = score;
+                                }
+                                for(let listener of listeners) {
+                                    listener.onScore(score);
+                                }
+                                handled = true;
+                                break;
+                            }
+                        }
+                        if(!handled) {
+                            gameState = GameState.GameOver;         
+                            cooldown = 20;
+                            for(let listener of listeners) {
+                                listener.onDie(score, highScore);
+                            }
+                            sounds.hit.play();
+                        }
+                    }
+                    break;
+                case offscreenSensor:
+                    for(let i = 0; i < pipeBodies.length; i++) {
+                        if(pipeBodies[i] == tuple[1]) {
+                            Matter.World.remove(matterEngine.world, pipeBodies[i])
+                            pipeBodies.splice(i, 1);
+                            break;
+                        }
+                    }
+                    break;
+            }
+        }   
+    }
+});
+Matter.Runner.run(matterRunner, matterEngine);
+
+class FlappyGraphics implements FlappyListener {
     
-    constructor(physics:FlappyPhysics, canvas?:HTMLCanvasElement) {
+    constructor(canvas?:HTMLCanvasElement) {
         listeners.push(this);
         PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
-        this.application = new PIXI.Application({view:canvas});
-        this.pipeContainer = new PIXI.Container();
-        this.floorContainer = new PIXI.Container();
+        application = new PIXI.Application({view:canvas});
+        pipeContainer = new PIXI.Container();
+        floorContainer = new PIXI.Container();
         PIXI.loader
         .add([
             '/images/bluebird-downflap.png',
@@ -324,111 +300,111 @@ class FlappyGraphics implements FlappyListener {
             '/fonts/score.xml'
         ])
         .on('complete', (loader, resource) => {
-            this.application.view.onpointerup = () => {
+            application.view.onpointerup = () => {
                 if(screenfull.enabled && !screenfull.isFullscreen) {
-                    screenfull.request(this.application.view);
+                    screenfull.request(application.view);
                 }
             };
             window.onresize = () => {
-                let w:number = this.application.view.clientWidth;
-                let h:number = this.application.view.clientHeight;
+                let w:number = application.view.clientWidth;
+                let h:number = application.view.clientHeight;
                 let ratio:number = w / h;  
 
                 if(ratio > 0.683 || ratio < 0.48) {
                     let scale:number = w * (600 / h);
-                    this.application.stage.x = scale / 2 - 144;
-                    this.application.stage.y = 0;
-                    this.application.renderer.resize(scale, 600);
+                    application.stage.x = scale / 2 - 144;
+                    application.stage.y = 0;
+                    application.renderer.resize(scale, 600);
                 }
                 else
                 {
                     let scale:number = h * (288 / w);
-                    this.application.stage.x = 0;
-                    this.application.stage.y = scale / 2 - 300;
-                    this.application.renderer.resize(288, scale);
+                    application.stage.x = 0;
+                    application.stage.y = scale / 2 - 300;
+                    application.renderer.resize(288, scale);
                 }
 
                 if(ratio < 0.54) {
-                    this.titleSprite.position.y = this.bitmapText.position.y = 75;
+                    titleSprite.position.y = bitmapText.position.y = 75;
                 }
                 else if(ratio < 0.57) {
-                    this.titleSprite.position.y = this.bitmapText.position.y = 100;
+                    titleSprite.position.y = bitmapText.position.y = 100;
                 }
                 else if(ratio < 0.65) {
-                    this.titleSprite.position.y = this.bitmapText.position.y = 125;
+                    titleSprite.position.y = bitmapText.position.y = 125;
                 }
                 else if(ratio < 0.683) {
-                    this.titleSprite.position.y = this.bitmapText.position.y = 150;
+                    titleSprite.position.y = bitmapText.position.y = 150;
                 }
                 else {
-                    this.titleSprite.position.y = this.bitmapText.position.y = 100;
+                    titleSprite.position.y = bitmapText.position.y = 100;
                 }
             };
 
-            this.animation = new PIXI.extras.AnimatedSprite([
+            animation = new PIXI.extras.AnimatedSprite([
                 PIXI.loader.resources['/images/bluebird-downflap.png'].texture,
                 PIXI.loader.resources['/images/bluebird-midflap.png'].texture,
                 PIXI.loader.resources['/images/bluebird-upflap.png'].texture,
                 PIXI.loader.resources['/images/bluebird-midflap.png'].texture
             ]);
 
-            this.animation.play();
+            animation.play();
 
-            this.titleSprite = new PIXI.Sprite(PIXI.loader.resources['/images/title.png'].texture);
-            this.titleSprite.position.x = 144;
-            this.titleSprite.position.y = 150;
-            this.titleSprite.anchor.x = 0.5;
-            this.titleSprite.anchor.y = 0.5;
+            titleSprite = new PIXI.Sprite(PIXI.loader.resources['/images/title.png'].texture);
+            titleSprite.position.x = 144;
+            titleSprite.position.y = 150;
+            titleSprite.anchor.x = 0.5;
+            titleSprite.anchor.y = 0.5;
 
-            this.scoreSprite = new PIXI.Sprite(PIXI.loader.resources['/images/score.png'].texture);
-            this.scoreSprite.anchor.x = 0.5;
-            this.scoreSprite.anchor.y = 0.5;
-            this.scoreSprite.position.x = 144;
-            this.scoreSprite.position.y = 240;
-            this.scoreSprite.visible = false;
+            scoreSprite = new PIXI.Sprite(PIXI.loader.resources['/images/score.png'].texture);
+            scoreSprite.anchor.x = 0.5;
+            scoreSprite.anchor.y = 0.5;
+            scoreSprite.position.x = 144;
+            scoreSprite.position.y = 240;
+            scoreSprite.visible = false;
 
-            this.scoreText = new PIXI.extras.BitmapText("0", { font: '36px Score' });
-            (<any>this.scoreText).anchor.x = 0.5;
-            (<any>this.scoreText).anchor.y = 0.5;
-            this.scoreText.position.y = -30;
+            scoreText = new PIXI.extras.BitmapText("0", { font: '36px Score' });
+            (<any>scoreText).anchor.x = 0.5;
+            (<any>scoreText).anchor.y = 0.5;
+            scoreText.position.y = -30;
 
-            this.highScoreText = new PIXI.extras.BitmapText("0", { font: '36px Score' });
-            (<any>this.highScoreText).anchor.x = 0.5;
-            (<any>this.highScoreText).anchor.y = 0.5;
-            this.highScoreText.position.y = 44;
+            highScoreText = new PIXI.extras.BitmapText("0", { font: '36px Score' });
+            (<any>highScoreText).anchor.x = 0.5;
+            (<any>highScoreText).anchor.y = 0.5;
+            highScoreText.position.y = 44;
 
-            this.leaderboardButton = new PIXI.Sprite(PIXI.loader.resources['/images/add-to-leaderboard.png'].texture);
-            this.leaderboardButton.anchor.x = 0.5;
-            this.leaderboardButton.anchor.y = 0.5;
-            this.leaderboardButton.position.y = 170;
+            leaderboardButton = new PIXI.Sprite(PIXI.loader.resources['/images/add-to-leaderboard.png'].texture);
+            leaderboardButton.anchor.x = 0.5;
+            leaderboardButton.anchor.y = 0.5;
+            leaderboardButton.position.y = 170;
 
-            this.leaderboardButtonGlow = new PIXI.Sprite(PIXI.loader.resources['/images/add-to-leaderboard-glow.png'].texture);
-            this.leaderboardButtonGlow.anchor.x = 0.5;
-            this.leaderboardButtonGlow.anchor.y = 0.5;
-            this.leaderboardButtonGlow.position.x = this.leaderboardButton.position.x;
-            this.leaderboardButtonGlow.position.y = this.leaderboardButton.position.y;
+            leaderboardButtonGlow = new PIXI.Sprite(PIXI.loader.resources['/images/add-to-leaderboard-glow.png'].texture);
+            leaderboardButtonGlow.anchor.x = 0.5;
+            leaderboardButtonGlow.anchor.y = 0.5;
+            leaderboardButtonGlow.position.x = leaderboardButton.position.x;
+            leaderboardButtonGlow.position.y = leaderboardButton.position.y;
 
-            this.restartButton = new PIXI.Sprite(PIXI.loader.resources['/images/restart.png'].texture);
-            this.restartButton.anchor.x = 0.5;
-            this.restartButton.anchor.y = 0.5;
-            this.restartButton.position.x = 50;
-            this.restartButton.position.y = 135;
+            restartButton = new PIXI.Sprite(PIXI.loader.resources['/images/restart.png'].texture);
+            restartButton.anchor.x = 0.5;
+            restartButton.anchor.y = 0.5;
+            restartButton.position.x = 50;
+            restartButton.position.y = 135;
 
-            this.shareButton = new PIXI.Sprite(PIXI.loader.resources['/images/share.png'].texture);
-            this.shareButton.anchor.x = 0.5;
-            this.shareButton.anchor.y = 0.5;
-            this.shareButton.position.x = -50;
-            this.shareButton.position.y = 135;
+            shareButton = new PIXI.Sprite(PIXI.loader.resources['/images/share.png'].texture);
+            shareButton.anchor.x = 0.5;
+            shareButton.anchor.y = 0.5;
+            shareButton.position.x = -50;
+            shareButton.position.y = 135;
 
-            this.leaderboardButton.interactive = true;
-            this.leaderboardButton.buttonMode = true;
-            this.leaderboardButton.on('pointerup', () => {
+            leaderboardButton.interactive = true;
+            leaderboardButton.buttonMode = true;
+            leaderboardButton.on('pointerup', () => {
                 if(cooldown > 0)
                     return;
                 let scoreInput:HTMLInputElement = document.createElement("input");
                 scoreInput.setAttribute('type', 'hidden');
                 scoreInput.setAttribute('name', 'value');
-                scoreInput.setAttribute('value', '' + physics.getScore());
+                scoreInput.setAttribute('value', '' + score);
 
                 let validInput:HTMLInputElement = document.createElement("input");
                 validInput.setAttribute('type', 'hidden');
@@ -445,143 +421,122 @@ class FlappyGraphics implements FlappyListener {
                 form.submit();
             });
             
-            this.shareButton.interactive = true;
-            this.shareButton.buttonMode = true;
-            this.shareButton.on('pointerup', () => {
+            shareButton.interactive = true;
+            shareButton.buttonMode = true;
+            shareButton.on('pointerup', () => {
                 if(cooldown > 0)
                     return;
                 FB.ui({
                     method: 'share',
                     href: window.location.href,
+                    quote: 'I scored ' + score + ' in Flappy Bird Online!'
                 }, function(response){});
             });
             
-            this.restartButton.interactive = true;
-            this.restartButton.buttonMode = true;
-            this.restartButton.on('pointerup', () => {
-                physics.flap();
+            restartButton.interactive = true;
+            restartButton.buttonMode = true;
+            restartButton.on('pointerup', () => {
+                flap();
             });
 
-            this.touch = new PIXI.Graphics();
-            this.touch.beginFill(0xFF0000, 0);
-            this.touch.drawRect(0, 0, 288, 600);
+            touch = new PIXI.Graphics();
+            touch.beginFill(0xFF0000, 0);
+            touch.drawRect(0, 0, 288, 600);
 
-            this.touch.interactive = true;
-            this.touch.on('pointerdown', () => {
-                physics.flap();
+            touch.interactive = true;
+            touch.on('pointerdown', () => {
+                flap();
             });
 
-            this.scoreSprite.addChild(this.scoreText);
-            this.scoreSprite.addChild(this.highScoreText);
-            this.scoreSprite.addChild(this.leaderboardButtonGlow);
-            this.scoreSprite.addChild(this.leaderboardButton);
-            this.scoreSprite.addChild(this.restartButton);
-            this.scoreSprite.addChild(this.shareButton);
+            scoreSprite.addChild(scoreText);
+            scoreSprite.addChild(highScoreText);
+            scoreSprite.addChild(leaderboardButtonGlow);
+            scoreSprite.addChild(leaderboardButton);
+            scoreSprite.addChild(restartButton);
+            scoreSprite.addChild(shareButton);
 
-            this.mask = new PIXI.Graphics();
-            this.mask.beginFill(0xffffff, 1);
-            this.mask.drawRect(0, 0, 288, 600);
-            this.application.stage.mask = this.mask;
+            mask = new PIXI.Graphics();
+            mask.beginFill(0xffffff, 1);
+            mask.drawRect(0, 0, 288, 600);
+            application.stage.mask = mask;
 
-            this.animation.anchor.x = 0.5;
-            this.animation.anchor.y = 0.5;
-            this.animation.loop = true;
-            this.animation.animationSpeed = 0.15;
+            animation.anchor.x = 0.5;
+            animation.anchor.y = 0.5;
+            animation.loop = true;
+            animation.animationSpeed = 0.15;
 
-            this.bitmapText = new PIXI.extras.BitmapText("0", { font: '36px Score' });
-            this.bitmapText.position.x = 144;
-            this.bitmapText.position.y = 150;
-            this.bitmapText.visible = false;
-            (<any>this.bitmapText).anchor.x = 0.5;
-            (<any>this.bitmapText).anchor.y = 0.5;
+            bitmapText = new PIXI.extras.BitmapText("0", { font: '36px Score' });
+            bitmapText.position.x = 144;
+            bitmapText.position.y = 150;
+            bitmapText.visible = false;
+            (<any>bitmapText).anchor.x = 0.5;
+            (<any>bitmapText).anchor.y = 0.5;
 
-            this.floorSprites = [];
+            floorSprites = [];
             let floorTexture:PIXI.Texture = PIXI.loader.resources['/images/floor.png'].texture;
             for(let i:number = 0; i < 2; i ++) {
                 let section:PIXI.Sprite = new PIXI.Sprite(floorTexture);
                 section.position.y = 600 - floorTexture.height;
-                this.floorContainer.addChild(section);
-                this.floorSprites.push(section);
+                floorContainer.addChild(section);
+                floorSprites.push(section);
             }
-            this.pipeSprites = [];
-            this.background = new PIXI.Sprite(PIXI.loader.resources['/images/background.png'].texture);
-            this.application.stage.addChild(this.background);
-            this.application.stage.addChild(this.pipeContainer);
-            this.application.stage.addChild(this.floorContainer);
-            this.application.stage.addChild(this.animation);
-            this.application.stage.addChild(this.bitmapText);
-            this.application.stage.addChild(this.touch);
-            this.application.stage.addChild(this.scoreSprite);
-            this.application.stage.addChild(this.titleSprite);
-            this.application.stage.addChild(this.mask);
+            pipeSprites = [];
+            background = new PIXI.Sprite(PIXI.loader.resources['/images/background.png'].texture);
+            application.stage.addChild(background);
+            application.stage.addChild(pipeContainer);
+            application.stage.addChild(floorContainer);
+            application.stage.addChild(animation);
+            application.stage.addChild(bitmapText);
+            application.stage.addChild(touch);
+            application.stage.addChild(scoreSprite);
+            application.stage.addChild(titleSprite);
+            application.stage.addChild(mask);
             if(!canvas) {
-                document.body.appendChild(this.application.view);
+                document.body.appendChild(application.view);
             }
             window.onresize(null);
-            this.display(physics);
+            this.display();
         })
         .load();
     }
 
-    public display(physics:FlappyPhysics):void {
-        let position:{x:number,y:number} = physics.getPlayerPosition();
-        let rotation:number = physics.getPlayerRotation();
-        let floorOffsets:number[] = physics.getFloorOffsets();
-        let pipeOrientations:{x:number,y:number,r:number}[] = physics.getPipeOrientations();
-        this.animation.position.x = position.x;
-        this.animation.position.y = position.y;
-        this.animation.rotation = rotation;
+    public display():void {
+        let position:Matter.Vector = playerBody.position;
+        let rotation:number = playerBody.angle;
+        animation.position.x = position.x;
+        animation.position.y = position.y;
+        animation.rotation = rotation;
 
         for(let i in floorOffsets) {
-            this.floorSprites[i].position.x = floorOffsets[i];
-        }
-
-        for(let i in pipeOrientations) {
-            let sprite:PIXI.Sprite = this.pipeSprites[i];
-            if(sprite == undefined) {
-                sprite = this.pipeSprites[i] = new PIXI.Sprite(PIXI.loader.resources['/images/pipe-green.png'].texture);
-                sprite.anchor.x = 0.5;
-                sprite.anchor.y = 0.5;
-                this.pipeContainer.addChild(sprite);
-            }
-            else {
-                sprite.visible = true;
-            }
-            sprite.position.x = pipeOrientations[i].x;
-            sprite.position.y = pipeOrientations[i].y;
-            sprite.rotation = pipeOrientations[i].r;
-        }
-        for(let i = pipeOrientations.length; i < this.pipeSprites.length; i++)
-        {
-            this.pipeSprites[i].visible = false;
+            floorSprites[i].position.x = floorOffsets[i];
         }
 
         let delta:number = elapsed();
-        this.leaderboardButtonGlow.alpha = (-Math.cos(delta / 500) + 1) / 2;
-        this.scoreSprite.position.y = Math.min(delta, 240);
-        this.scoreSprite.alpha = Math.min(delta / 250, 1);
+        leaderboardButtonGlow.alpha = (-Math.cos(delta / 500) + 1) / 2;
+        scoreSprite.position.y = Math.min(delta, 240);
+        scoreSprite.alpha = Math.min(delta / 250, 1);
 
         window.requestAnimationFrame(time => {
-            this.display(physics);
+            this.display();
         });
     }
 
     public onReset():void {
-        while(this.pipeSprites.length > 0) {
-            let pipeSprite:PIXI.Sprite = this.pipeSprites.pop();
-            this.application.stage.removeChild(pipeSprite);
+        while(pipeSprites.length > 0) {
+            let pipeSprite:PIXI.Sprite = pipeSprites.pop();
+            application.stage.removeChild(pipeSprite);
             pipeSprite.destroy();
         }
-        this.scoreSprite.visible = false;
-        this.titleSprite.visible = true;
-        this.animation.play();
+        scoreSprite.visible = false;
+        titleSprite.visible = true;
+        animation.play();
         relativeTime = new Date();
     }
 
     public onGameStart():void {
-        this.bitmapText.text = '0';
-        this.bitmapText.visible = true;
-        this.titleSprite.visible = false;
+        bitmapText.text = '0';
+        bitmapText.visible = true;
+        titleSprite.visible = false;
     }
 
     public onDie(score:number, highScore:number):void {
@@ -590,20 +545,20 @@ class FlappyGraphics implements FlappyListener {
         xmlHttpRequest.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
         xmlHttpRequest.send('score=' + score);
 
-        this.leaderboardButtonGlow.alpha = 0;
-        this.bitmapText.visible = false;
-        this.scoreSprite.alpha = 0;
-        this.scoreSprite.position.y = 0;
-        this.scoreSprite.visible = true;
-        this.scoreText.text = '' + score;
-        this.highScoreText.text = '' + highScore;
-        this.animation.stop();
+        leaderboardButtonGlow.alpha = 0;
+        bitmapText.visible = false;
+        scoreSprite.alpha = 0;
+        scoreSprite.position.y = 0;
+        scoreSprite.visible = true;
+        scoreText.text = '' + score;
+        highScoreText.text = '' + highScore;
+        animation.stop();
         cooldown = 20;
         relativeTime = new Date();
     }
 
     public onScore(score:number):void {
-        this.bitmapText.text = '' + score;
+        bitmapText.text = '' + score;
     }
 }
 
@@ -615,9 +570,9 @@ window.fbAsyncInit = function() {
     var j, c = d.getElementsByTagName(s)[0];
     if (!d.getElementById(id)) {
         j = d.createElement(s); j.id = id;
-        j.src = "https://connect.facebook.net/en_GB/sdk.js";
+        j.src = 'https://connect.facebook.net/en_GB/sdk.js';
         c.parentNode.insertBefore(j, c);
     }
   }(document, 'script', 'facebook-jssdk'));
 
-var f:FlappyGraphics = new FlappyGraphics(new FlappyPhysics());
+var f:FlappyGraphics = new FlappyGraphics();

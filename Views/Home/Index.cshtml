@@ -1,4 +1,16 @@
-﻿@{ ViewData["Title"] = "Home Page"; }
+﻿@using Flappy.Settings
+@using Microsoft.Extensions.Options
+@inject IOptions<OpenGraphSettings> openGraphSettings
+@{ ViewData["Title"] = "Home Page"; }
+@section head
+{
+    <meta property="fb:app_id" content="@openGraphSettings.Value.FacebookAppId"/>
+    <meta property="og:title" content="Flappy Bird" />
+    <meta property="og:description" content="Play flappy bird online for free!" />
+    <meta property="og:image" content="https://flappy.si/images/og.png" />
+    <meta property="og:url" content="https://flappy.si/" />
+    <meta property="og:type" content="games.plays" />
+}
 <script src="~/screenfull.js"></script>
 <script src="~/howler.min.js"></script>
 <script src="~/matter.min.js"></script>

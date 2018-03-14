@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@types/fb": "0.0.23",
     "bootstrap": "^4.0.0",
     "howler": "^2.0.9",
     "jquery": "^3.3.1",
@@ -9,12 +10,10 @@
     "screenfull": "^3.3.2"
   },
   "devDependencies": {
-    "@types/fb": "latest",
     "@types/howler": "latest",
     "@types/jquery": "latest",
     "@types/matter-js": "latest",
     "@types/pixi.js": "latest",
-    "@types/screenfull": "latest",
     "gulp": "latest",
     "gulp-concat": "latest",
     "gulp-sass": "latest",

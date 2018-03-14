@@ -1,7 +1,0 @@
-{
-    "name": "Flappy Bird",
-    "short_name": "Flappy Bird",
-    "display": "fullscreen",
-    "background_color": "#f00",
-    "description": "A flappy bird clone written in HTML5."
-  }
