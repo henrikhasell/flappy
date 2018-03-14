@@ -5,7 +5,7 @@ var concat = require('gulp-concat');
 var sass = require('gulp-sass');
 
 gulp.task('compile', function() {
-    return gulp.src('ts/**/*.ts').pipe(typescript()).pipe(gulp.dest('ts'))
+    return gulp.src('ts/src/**/*.ts').pipe(typescript()).pipe(gulp.dest('ts'))
 });
 
 gulp.task('copy', ['copy-js', 'copy-css']);
@@ -29,7 +29,7 @@ gulp.task('copy-css', function() {
 });
 
 gulp.task('compress', ['compile'], function () {
-    return gulp.src('./ts/**/*.js')
+    return gulp.src('./ts/src/**/*.js')
         .pipe(uglify())
         .pipe(concat('flappy.min.js'))
         .pipe(gulp.dest('./wwwroot/'));
@@ -43,8 +43,8 @@ gulp.task('sass', function () {
 });
 
 gulp.task('watch', function() {
-    gulp.watch('ts/*.ts', ['compress']);
-    gulp.watch('sass/*.{sass,scss}', ['sass']);
+    gulp.watch('ts/src/**/*.ts', ['compress']);
+    gulp.watch('sass/**/*.{sass,scss}', ['sass']);
 });
 
 gulp.task('default', ['copy', 'compress', 'sass']);
