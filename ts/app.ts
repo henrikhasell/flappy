@@ -465,7 +465,7 @@ class FlappyGraphics implements FlappyListener {
             animation.loop = true;
             animation.animationSpeed = 0.15;
 
-            bitmapText = new PIXI.extras.BitmapText("0", { font: '36px Score' });
+            bitmapText = new PIXI.extras.BitmapText('0', { font: '36px Score' });
             bitmapText.position.x = 144;
             bitmapText.position.y = 150;
             bitmapText.visible = false;
@@ -511,6 +511,28 @@ class FlappyGraphics implements FlappyListener {
             floorSprites[i].position.x = floorOffsets[i];
         }
 
+        for(let i in pipeBodies) {
+            let sprite:PIXI.Sprite = pipeSprites[i];
+            let body:Matter.Body = pipeBodies[i];
+            if(sprite == undefined) {
+                sprite = pipeSprites[i] = new PIXI.Sprite(PIXI.loader.resources['/images/pipe-green.png'].texture);
+                sprite.anchor.x = 0.5;
+                sprite.anchor.y = 0.5;
+                pipeContainer.addChild(sprite);
+            }
+            else {
+                sprite.visible = true;
+            }
+            sprite.position.x = body.position.x;
+            sprite.position.y = body.position.y;
+            sprite.rotation = body.angle;
+        }
+        
+        for(let i = pipeBodies.length; i < pipeSprites.length; i++)
+        {
+            pipeSprites[i].visible = false;
+        }
+            
         let delta:number = elapsed();
         leaderboardButtonGlow.alpha = (-Math.cos(delta / 500) + 1) / 2;
         scoreSprite.position.y = Math.min(delta, 240);
