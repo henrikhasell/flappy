@@ -269,9 +269,9 @@ function flappy() {
         window.onresize = () => {
             let w:number = application.view.clientWidth;
             let h:number = application.view.clientHeight;
-            let ratio:number = w / h;  
-
-            if(ratio > 0.683 || ratio < 0.48) {
+            let ratio:number = w / h;
+            
+            if(ratio > 0.75 || ratio < 0.48) {
                 let scale:number = w * (600 / h);
                 application.stage.x = scale / 2 - 144;
                 application.stage.y = 0;
@@ -294,7 +294,7 @@ function flappy() {
             else if(ratio < 0.65) {
                 titleSprite.position.y = bitmapText.position.y = 125;
             }
-            else if(ratio < 0.683) {
+            else if(ratio < 0.75) {
                 titleSprite.position.y = bitmapText.position.y = 150;
             }
             else {
