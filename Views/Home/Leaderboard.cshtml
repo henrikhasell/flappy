@@ -1,9 +1,9 @@
 ﻿@{ ViewData["Title"] = "Leaderboard"; }
 @using Flappy.Models
 <h1>Leaderboard</h1>
-<h2>Top 10 Scores of This Week</h2>
+<h3>Top 10 Scores This Week</h3>
 @await Component.InvokeAsync("ScoreTable", ViewBag.Top10ThisMonth)
-<h2>Top 10 Scores of This Month</h2>
+<h3>Top 10 Scores This Month</h3>
 @await Component.InvokeAsync("ScoreTable", ViewBag.Top10AllTime)
-<h2>Top 10 Scores of All Time</h2>
+<h3>Top 10 Scores All Time</h3>
 @await Component.InvokeAsync("ScoreTable", ViewBag.Top10ThisWeek)
