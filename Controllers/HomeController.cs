@@ -25,10 +25,17 @@ namespace Flappy.Controllers
         [HttpGet]
         public async Task<IActionResult> Leaderboard()
         {
-            IList<Score> scores = await database.Scores
-                .OrderByDescending(i => i.Value).ThenBy(i => i.Time).ToListAsync();
+            IOrderedQueryable<Score> scores = database.Scores
+                .OrderByDescending(i => i.Value).ThenBy(i => i.Time);
 
-            return View(scores);
+            DateTime pastWeek = DateTime.Now.AddDays(-7);
+            DateTime pastMonth = DateTime.Now.AddDays(-30);
+
+            ViewBag.Top10ThisWeek = await scores.Where(i => i.Time >= pastWeek).Take(10).ToListAsync();
+            ViewBag.Top10ThisMonth = await scores.Where(i => i.Time >= pastMonth).Take(10).ToListAsync();
+            ViewBag.Top10AllTime = await scores.Take(10).ToListAsync();
+
+            return View();
         }
 
         [HttpPost]

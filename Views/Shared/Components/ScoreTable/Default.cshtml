@@ -1,0 +1,24 @@
+@using Flappy.Models
+@model IList<Score>
+<table class="table table-sm">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>@Html.DisplayNameFor(i => i[0].Time)</th>
+            <th>@Html.DisplayNameFor(i => i[0].Name)</th>
+            <th>@Html.DisplayNameFor(i => i[0].Value)</th>
+        </tr>
+    </thead>
+    <tbody>
+        @for(int i = 0; i < Model.Count; i++)
+        {
+            Score score = Model[i];
+            <tr>
+                <td>@(i + 1)</td>
+                <td>@Html.DisplayFor(j => score.Time)</td>
+                <td>@Html.DisplayFor(j => score.Name)</td>
+                <td>@Html.DisplayFor(j => score.Value)</td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -20,7 +20,7 @@ function flappy() {
     }
 
     let config:Configuration = {
-        force: 6.4,
+        force: 6.2,
         speed: 2.4,
         variance: 200,
         pipe: { delay:100, gap:88 }
