@@ -86,8 +86,8 @@ function flappy() {
     let worldVelocity:Matter.Vector = { x: -config.speed, y: 0 };
     switch(gameState) {
         case GameState.InProgress:
-            if(--pipeCounter <= 0) {//Math.random() * config.variance 
-                let height: number = (0 - config.variance / 2) + 300;
+            if(--pipeCounter <= 0) {
+                let height: number = (Math.random() * config.variance - config.variance / 2) + 300;
                 for(let flipped of [true, false]) {
                     createPipe(height, flipped);
                 }
