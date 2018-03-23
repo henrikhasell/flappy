@@ -2,8 +2,8 @@
 @using Flappy.Models
 <h1>Leaderboard</h1>
 <h3>Top 10 Scores This Week</h3>
-@await Component.InvokeAsync("ScoreTable", ViewBag.Top10ThisMonth)
-<h3>Top 10 Scores This Month</h3>
-@await Component.InvokeAsync("ScoreTable", ViewBag.Top10AllTime)
-<h3>Top 10 Scores All Time</h3>
 @await Component.InvokeAsync("ScoreTable", ViewBag.Top10ThisWeek)
+<h3>Top 10 Scores This Month</h3>
+@await Component.InvokeAsync("ScoreTable", ViewBag.Top10ThisMonth)
+<h3>Top 10 Scores All Time</h3>
+@await Component.InvokeAsync("ScoreTable", ViewBag.Top10AllTime)
