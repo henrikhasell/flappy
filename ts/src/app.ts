@@ -12,12 +12,13 @@ interface Configuration {
     pipe: { delay:number, gap:number };
 }
 
+interface Sounds {
+    point:Howl; 
+    hit:Howl;
+    wing:Howl;
+}
+
 function flappy() {
-    interface Sounds {
-        point:Howl; 
-        hit:Howl;
-        wing:Howl;
-    }
 
     let config:Configuration = {
         force: 6.2,
@@ -262,7 +263,7 @@ function flappy() {
     '/fonts/score.xml'
     ])
     .on('complete', (loader, resource) => {
-        application.view.onpointerup = () => {
+        application.view.ontouchend = () => {
             if(screenfull.enabled && !screenfull.isFullscreen) {
                 screenfull.request(application.view);
             }
@@ -464,8 +465,6 @@ function flappy() {
         display();
     })
     .load();
-
-
 
     function display():void {
         let position:Matter.Vector = playerBody.position;
