@@ -73,6 +73,7 @@ function flappy() {
     let shareButton:PIXI.Sprite;
     let titleSprite:PIXI.Sprite;
     let touch:PIXI.Graphics;
+    let scoreSpritePosition:number;
 
 
     function elapsed():number {
@@ -84,8 +85,8 @@ function flappy() {
     let worldVelocity:Matter.Vector = { x: -config.speed, y: 0 };
     switch(gameState) {
         case GameState.InProgress:
-            if(--pipeCounter <= 0) {
-                let height: number = (Math.random() * config.variance - config.variance / 2) + 300;
+            if(--pipeCounter <= 0) {//Math.random() * config.variance 
+                let height: number = (0 - config.variance / 2) + 300;
                 for(let flipped of [true, false]) {
                     createPipe(height, flipped);
                 }
@@ -271,7 +272,7 @@ function flappy() {
             let h:number = application.view.clientHeight;
             let ratio:number = w / h;
             
-            if(ratio > 0.75 || ratio < 0.48) {
+            if(ratio >= 0.82 || ratio < 0.48) {
                 let scale:number = w * (600 / h);
                 application.stage.x = scale / 2 - 144;
                 application.stage.y = 0;
@@ -285,6 +286,8 @@ function flappy() {
                 application.renderer.resize(288, scale);
             }
 
+            scoreSpritePosition = 240;
+
             if(ratio < 0.54) {
                 titleSprite.position.y = bitmapText.position.y = 75;
             }
@@ -296,6 +299,11 @@ function flappy() {
             }
             else if(ratio < 0.75) {
                 titleSprite.position.y = bitmapText.position.y = 150;
+            }
+            else if(ratio < 0.82) {
+                titleSprite.position.y = bitmapText.position.y = 190;
+                application.stage.y -= 20;
+                scoreSpritePosition += 30;
             }
             else {
                 titleSprite.position.y = bitmapText.position.y = 100;
@@ -493,8 +501,8 @@ function flappy() {
         }
             
         let delta:number = elapsed();
-        leaderboardButtonGlow.alpha = (-Math.cos(delta / 500) + 1) / 2;
-        scoreSprite.position.y = Math.min(delta, 240);
+        leaderboardButtonGlow.alpha = (-Math.cos(delta / 250) + 1) / 2;
+        scoreSprite.position.y = Math.min(delta, scoreSpritePosition);
         scoreSprite.alpha = Math.min(delta / 250, 1);
 
         window.requestAnimationFrame(time => {
