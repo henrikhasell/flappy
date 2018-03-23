@@ -1,7 +1,23 @@
 ﻿@using Flappy.Settings
 @using Microsoft.Extensions.Options
 @inject IOptions<OpenGraphSettings> openGraphSettings
-@{ ViewData["Title"] = "Home Page"; }
+@{
+    ViewData["Title"] = "Home Page";
+
+    string[] searchTerms = new string[]{
+        "flappy bird",
+        "flappy bird free",
+        "flappy bird online",
+        "flappy bird online free",
+        "play flappy bird",
+        "play flappy bird online",
+        "play flappy bird online free",
+        "free game",
+        "free online game",
+        "play free online game",
+        "online free game"
+    };
+}
 @section head
 {
     <meta property="fb:app_id" content="@openGraphSettings.Value.FacebookAppId"/>
@@ -10,6 +26,23 @@
     <meta property="og:image" content="https://flappy.si/images/og.png" />
     <meta property="og:url" content="https://flappy.si/" />
     <meta property="og:type" content="website" />
+}
+<h1>Flappy Bird Online</h1>
+<h4>Please wait for the game to load...</h4>
+<noscript>
+    <div class="alert alert-warning">
+        <strong> JavaScript is required:</strong> Please enable JavaScript to continue.
+    </div>
+</noscript>
+<p>
+    @foreach(string searchTerm in searchTerms)
+    {
+        <span>@searchTerm</span>
+    }
+</p>
+@foreach(string searchTerm in searchTerms)
+{
+    <p>@searchTerm</p>
 }
 <script src="~/screenfull.js"></script>
 <script src="~/howler.min.js"></script>
