@@ -24,7 +24,7 @@ function flappy() {
         force: 6.2,
         speed: 2.4,
         variance: 200,
-        pipe: { delay:100, gap:88 }
+        pipe: { delay:100, gap:120 }
     };
 
     let sounds:Sounds = {
@@ -43,7 +43,7 @@ function flappy() {
     let cooldown:number = 0;
     let matterEngine:Matter.Engine = Matter.Engine.create();
     let matterRunner:Matter.Runner = Matter.Runner.create({delta:1000/60});
-    let playerBody:Matter.Body = Matter.Bodies.circle(50, 0, 10, {friction:1, restitution:0.9});
+    let playerBody:Matter.Body = Matter.Bodies.circle(0, 0, 25, {friction:1, restitution:0.9});
     let floorBody:Matter.Body = Matter.Bodies.rectangle(400, 544, 800, 112, {isStatic:true});
     let offscreenCeling:Matter.Body = Matter.Bodies.rectangle(400, -100, 800, 10, {isStatic:true});
     let offscreenSensor:Matter.Body = Matter.Bodies.rectangle(-200, 300, 10, 600, {isSensor:true});
@@ -261,7 +261,7 @@ function flappy() {
     '/images/share.png',
     '/images/title.png',
     '/fonts/score.xml'
-    ])
+    ])  
     .on('complete', (loader, resource) => {
         application.view.ontouchend = () => {
             if(screenfull.enabled && !screenfull.isFullscreen) {
@@ -312,9 +312,6 @@ function flappy() {
         };
 
         animation = new PIXI.extras.AnimatedSprite([
-            PIXI.loader.resources['/images/bluebird-downflap.png'].texture,
-            PIXI.loader.resources['/images/bluebird-midflap.png'].texture,
-            PIXI.loader.resources['/images/bluebird-upflap.png'].texture,
             PIXI.loader.resources['/images/bluebird-midflap.png'].texture
         ]);
 
