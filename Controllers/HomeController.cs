@@ -38,7 +38,7 @@ namespace Flappy.Controllers
             return View();
         }
 
-        [HttpPost]
+        [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Leaderboard([Bind("Name","Value")]Score score, bool? validate=true)
         {
             if(ModelState.IsValid)
@@ -77,13 +77,14 @@ namespace Flappy.Controllers
                 return BadRequest();
             }
             
-            game.Time = DateTime.Now;
             game.Address = HttpContext.Request.Headers["X-Forwarded-For"];
 
             if(game.Address == null)
             {
                 game.Address = HttpContext.Connection.RemoteIpAddress.ToString();
             }
+            
+            game.Time = DateTime.Now;
 
             await database.Games.AddAsync(game);
             await database.SaveChangesAsync();
