@@ -1,0 +1,12 @@
+FROM node:latest as build-env
+WORKDIR /app
+COPY ./package.json ./gulpfile.js ./
+COPY ./sass ./sass
+COPY ./ts ./ts
+RUN npm install
+RUN ./node_modules/.bin/gulp
+
+FROM nginx:latest
+COPY ./nginx.conf /etc/nginx/nginx.conf
+COPY --from=build-env /app/wwwroot /app
+COPY ./wwwroot /app

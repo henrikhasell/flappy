@@ -1,0 +1,21 @@
+version: '3'
+services:
+  nginx.service:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    ports:
+      - '8080:80'
+    depends_on:
+      - app.service
+  app.service:
+    build:
+      context: .
+      dockerfile: Dockerfile.flappy
+    depends_on:
+      - database.service
+  database.service:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres

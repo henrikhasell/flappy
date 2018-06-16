@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql.EntityFrameworkCore.PostgreSQL;
 
 namespace Flappy
 {
@@ -26,7 +27,7 @@ namespace Flappy
             });
             services.AddMvc();
             services.AddDbContext<DatabaseContext>(options =>
-                options.UseSqlite("Data Source=Flappy.sqlite3"));
+                options.UseNpgsql(@"Host=database.service;Database=entitycore;Username=postgres;Password=postgres"));
         }
 
         public void Configure(IApplicationBuilder application, IHostingEnvironment environment)
@@ -36,7 +37,7 @@ namespace Flappy
                 application.UseDeveloperExceptionPage();
             }
 
-            application.UseStaticFiles();
+            //application.UseStaticFiles();
 
             application.UseMvc(routes =>
             {

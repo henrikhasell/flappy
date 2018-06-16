@@ -15,6 +15,7 @@ namespace Flappy.Controllers
         public HomeController(DatabaseContext database)
         {
             this.database = database;
+            this.database.Database.EnsureCreated();
         }
 
         public IActionResult Index()

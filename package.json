@@ -20,8 +20,5 @@
     "gulp-typescript": "latest",
     "gulp-uglify": "latest",
     "typescript": "latest"
-  },
-  "scripts": {
-    "postinstall": "node_modules/.bin/gulp"
   }
 }
