@@ -1,6 +1,3 @@
-/// <reference path="../d/fb.d.ts"/>
-/// <reference path="../d/screenfull.d.ts"/>
-
 const enum GameState {
     InProgress, StartGame, GameOver
 }
@@ -264,9 +261,7 @@ function flappy() {
     ])
     .on('complete', (loader, resource) => {
         application.view.ontouchend = () => {
-            if(screenfull.enabled && !screenfull.isFullscreen) {
-                screenfull.request(application.view);
-            }
+            (<any>application.view).webkitRequestFullscreen();
         };
         window.onresize = () => {
             let w:number = application.view.clientWidth;
@@ -394,13 +389,7 @@ function flappy() {
         shareButton.interactive = true;
         shareButton.buttonMode = true;
         shareButton.on('pointerup', () => {
-            if(cooldown > 0)
-                return;
-            FB.ui({
-                method: 'share',
-                href: window.location.href,
-                quote: 'I scored ' + score + ' in Flappy Bird Online!'
-            }, function(response){});
+            /* TODO: Implement sharing. */
         });
 
         restartButton.interactive = true;

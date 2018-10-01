@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "@types/fb": "^0.0.23",
+    "@types/screenfull": "^3.3.2",
     "bootstrap": "^4.0.0",
     "howler": "^2.0.9",
     "jquery": "^3.3.1",
@@ -19,6 +20,10 @@
     "gulp-sass": "latest",
     "gulp-typescript": "latest",
     "gulp-uglify": "latest",
-    "typescript": "latest"
+    "ts-loader": "^5.2.1",
+    "typescript": "^3.1.1",
+    "webpack": "^4.20.2",
+    "webpack-cli": "^3.1.2",
+    "webpack-dev-server": "^3.1.9"
   }
 }
