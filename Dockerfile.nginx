@@ -1,10 +1,10 @@
 FROM node:latest as build-env
 WORKDIR /app
-COPY ./package.json ./gulpfile.js ./
+COPY ./package.json ./gulpfile.js ./webpack.config.js ./tsconfig.json ./
 COPY ./sass ./sass
 COPY ./ts ./ts
 RUN npm install
-RUN ./node_modules/.bin/gulp
+RUN npx webpack --mode production
 
 FROM nginx:latest
 COPY ./nginx.conf /etc/nginx/nginx.conf
